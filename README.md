@@ -1,4 +1,10 @@
- # IaC-EDR-Backend
+# IaC-EDR-Backend
+
+> **Note:**
+> If you’re on a brand new Ubuntu system, you may need to install `git` first:
+> ```sh
+> sudo apt update && sudo apt install -y git
+> ```
 
 This repository provides an automated, reproducible Ansible-based deployment for an EDR (Elasticsearch, Kibana, TheHive) backend stack. It is designed for academic, research, and production use, following best practices for infrastructure as code (IaC).
 
@@ -18,35 +24,39 @@ This repository provides an automated, reproducible Ansible-based deployment for
 
 ## 🚦 Quick Start Guide (for ANYONE)
 
-**1. Clone the repository**
+**1. (If needed) Install git**
+```sh
+sudo apt update && sudo apt install -y git
+```
+
+**2. Clone the repository**
 ```sh
 git clone <this-repo-url>
 cd IaC-EDR-Backend
 ```
 
-**2. Install prerequisites**
+**3. Install prerequisites**
 ```sh
-sudo apt update
 sudo apt install -y python3 python3-pip ansible sshpass openssl
 ```
 
-**3. Make the deploy script executable**
+**4. Make the deploy script executable**
 ```sh
 chmod +x deploy.sh
 ```
 
-**4. Run the magic!**
+**5. Run the magic!**
 ```sh
 ./deploy.sh
 ```
 
-**5. Follow the prompts:**
+**6. Follow the prompts:**
 - If you don’t have an SSH key, the script will help you create one.
 - Enter your backend server’s IP, SSH username, and password.
 - The script can copy your SSH key to the backend for passwordless access.
 - Sit back and watch as your EDR backend is provisioned and configured!
 
-**6. When it’s done:**
+**7. When it’s done:**
 - Access Kibana: `http://<your-server-ip>:5601`
 - Access TheHive: `http://<your-server-ip>:9000`
 - Get Elastic credentials: `sudo cat /etc/elasticsearch/passwords` (on the backend server)
