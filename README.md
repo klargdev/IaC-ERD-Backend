@@ -21,6 +21,7 @@ It uses **Ansible** to automate the provisioning and configuration of:
 ---
 
 ## 🗂️ **Repository Structure**
+```plaintext
 IaC-EDR-Backend/
 ├── inventory/       # Inventory files listing your backend servers and groups
 ├── group_vars/      # Group-specific variables (e.g., passwords, tokens)
