@@ -46,8 +46,7 @@ ansible.cfg — Ansible’s config file (e.g., SSH settings, default paths).
 
 vault/ — Folder for sensitive secrets encrypted with Ansible Vault — never push your vault keys.
 
-
----
+```
 
 ## 🚀 **Quick Start**
 
