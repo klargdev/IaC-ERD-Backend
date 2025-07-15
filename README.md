@@ -67,7 +67,7 @@ Edit group_vars/ and encrypt secrets with ansible-vault.
 Run the playbook
 
 ansible-playbook -i inventory/hosts.yml site.yml
-```
+
 ##🛡️ **Security Note**
 🚫 Never commit real SSH keys, vault passwords, or API tokens.
 Use .gitignore and Ansible Vault to protect sensitive data.
