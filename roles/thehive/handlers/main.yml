@@ -1,6 +1,4 @@
 ---
-# Handlers for thehive role 
----
 - name: restart thehive
   systemd:
     name: thehive
