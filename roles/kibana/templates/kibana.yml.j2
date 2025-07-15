@@ -1,3 +1,8 @@
 server.port: {{ kibana_port | default(5601) }}
 server.host: "0.0.0.0"
-elasticsearch.hosts: ["http://localhost:9200"] 
+elasticsearch.hosts: ["https://localhost:9200"]
+server.ssl.enabled: true
+server.ssl.certificate: /etc/kibana/certs/kibana.crt
+server.ssl.key: /etc/kibana/certs/kibana.key
+elasticsearch.ssl.certificateAuthorities: [ "/etc/kibana/certs/ca.crt" ]
+elasticsearch.ssl.verificationMode: certificate 

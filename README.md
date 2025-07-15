@@ -10,6 +10,11 @@ This repository provides an automated, reproducible Ansible-based deployment for
 
 ---
 
+> **Security:**
+> Elasticsearch, Kibana, and TheHive are now secured with self-signed TLS/SSL certificates by default. You will access them via `https://` URLs. Your browser will warn you about the self-signed certificate; you can safely proceed or add the CA certificate to your trusted store for a better experience.
+
+---
+
 ## ✨ Features
 - **One-command deployment**: Run `./deploy.sh` to provision a full EDR backend stack.
 - **Prerequisite checks**: Script verifies Python 3, Ansible, sshpass, and openssl are installed, and prints install instructions if not.
@@ -54,14 +59,25 @@ chmod +x deploy.sh
 
 **6. Follow the prompts:**
 - If you don’t have an SSH key, the script will help you create one.
-- Enter your backend server’s IP, SSH username, and password.
+- **When asked for the target Ubuntu server IP:**
+  - This is the IP address of the backend Ubuntu server where you want to deploy the EDR stack (not your own laptop).
+  - To find it, log in to your backend server and run:
+    ```sh
+    ip a
+    # or
+    hostname -I
+    ```
+  - Use the IP address shown (e.g., `192.168.1.100`).
+  - If using a cloud server, use the public or private IP from your cloud dashboard.
+- Enter your backend server’s SSH username and password.
 - The script can copy your SSH key to the backend for passwordless access.
 - Sit back and watch as your EDR backend is provisioned and configured!
 
 **7. When it’s done:**
-- Access Kibana: `http://<your-server-ip>:5601`
-- Access TheHive: `http://<your-server-ip>:9000`
+- Access Kibana: `https://<your-server-ip>:5601`
+- Access TheHive: `https://<your-server-ip>:9000`
 - Get Elastic credentials: `sudo cat /etc/elasticsearch/passwords` (on the backend server)
+- Download the CA certificate from `/etc/elasticsearch/certs/ca.crt` if you want to trust it in your browser.
 
 ---
 

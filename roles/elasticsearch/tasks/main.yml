@@ -1,7 +1,7 @@
 ---
 - name: Install prerequisites
   apt:
-    name: [openjdk-17-jdk, apt-transport-https]
+    name: [openjdk-17-jdk, apt-transport-https, openssl]
     state: present
 
 - name: Add Elastic GPG key
@@ -20,6 +20,47 @@
     name: elasticsearch
     state: present
     update_cache: yes
+
+- name: Create certs directory
+  file:
+    path: /etc/elasticsearch/certs
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: 0750
+
+- name: Generate CA private key
+  command: openssl genrsa -out /etc/elasticsearch/certs/ca.key 4096
+  args:
+    creates: /etc/elasticsearch/certs/ca.key
+
+- name: Generate CA certificate
+  command: openssl req -x509 -new -nodes -key /etc/elasticsearch/certs/ca.key -sha256 -days 3650 -subj "/CN=EDR-CA" -out /etc/elasticsearch/certs/ca.crt
+  args:
+    creates: /etc/elasticsearch/certs/ca.crt
+
+- name: Generate Elasticsearch private key
+  command: openssl genrsa -out /etc/elasticsearch/certs/elasticsearch.key 4096
+  args:
+    creates: /etc/elasticsearch/certs/elasticsearch.key
+
+- name: Generate Elasticsearch CSR
+  command: openssl req -new -key /etc/elasticsearch/certs/elasticsearch.key -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" -out /etc/elasticsearch/certs/elasticsearch.csr
+  args:
+    creates: /etc/elasticsearch/certs/elasticsearch.csr
+
+- name: Sign Elasticsearch certificate with CA
+  command: openssl x509 -req -in /etc/elasticsearch/certs/elasticsearch.csr -CA /etc/elasticsearch/certs/ca.crt -CAkey /etc/elasticsearch/certs/ca.key -CAcreateserial -out /etc/elasticsearch/certs/elasticsearch.crt -days 365 -sha256
+  args:
+    creates: /etc/elasticsearch/certs/elasticsearch.crt
+
+- name: Set permissions on certs
+  file:
+    path: /etc/elasticsearch/certs
+    owner: root
+    group: elasticsearch
+    mode: 0750
+    recurse: yes
 
 - name: Configure Elasticsearch
   template:

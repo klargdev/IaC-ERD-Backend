@@ -5,6 +5,46 @@
     state: present
     update_cache: yes
 
+- name: Create certs directory
+  file:
+    path: /etc/kibana/certs
+    state: directory
+    owner: root
+    group: kibana
+    mode: 0750
+
+- name: Copy CA cert from Elasticsearch
+  copy:
+    src: /etc/elasticsearch/certs/ca.crt
+    dest: /etc/kibana/certs/ca.crt
+    remote_src: yes
+    owner: root
+    group: kibana
+    mode: 0644
+
+- name: Generate Kibana private key
+  command: openssl genrsa -out /etc/kibana/certs/kibana.key 4096
+  args:
+    creates: /etc/kibana/certs/kibana.key
+
+- name: Generate Kibana CSR
+  command: openssl req -new -key /etc/kibana/certs/kibana.key -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" -out /etc/kibana/certs/kibana.csr
+  args:
+    creates: /etc/kibana/certs/kibana.csr
+
+- name: Sign Kibana certificate with CA
+  command: openssl x509 -req -in /etc/kibana/certs/kibana.csr -CA /etc/kibana/certs/ca.crt -CAkey /etc/elasticsearch/certs/ca.key -CAcreateserial -out /etc/kibana/certs/kibana.crt -days 365 -sha256
+  args:
+    creates: /etc/kibana/certs/kibana.crt
+
+- name: Set permissions on certs
+  file:
+    path: /etc/kibana/certs
+    owner: root
+    group: kibana
+    mode: 0750
+    recurse: yes
+
 - name: Configure Kibana
   template:
     src: kibana.yml.j2

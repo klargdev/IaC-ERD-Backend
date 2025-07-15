@@ -3,4 +3,8 @@ node.name: {{ ansible_hostname }}
 network.host: 0.0.0.0
 http.port: 9200
 discovery.type: single-node
-xpack.security.enabled: true 
+xpack.security.enabled: true
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key: /etc/elasticsearch/certs/elasticsearch.key
+xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/elasticsearch.crt
+xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ] 

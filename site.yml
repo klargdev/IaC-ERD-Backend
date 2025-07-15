@@ -1,1 +1,10 @@
- 
+---
+- name: Deploy EDR Backend Stack
+  hosts: edr_backend
+  become: true
+  gather_facts: true
+
+  roles:
+    - elasticsearch
+    - kibana
+    - thehive 
