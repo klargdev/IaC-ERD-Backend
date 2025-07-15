@@ -1,0 +1,4 @@
+vault/.vault_pass
+*.retry
+*.swp
+inventory/local/

@@ -1,27 +1,161 @@
-# IaC-ERD-Backend
-Ansible IaC for deploying a free open-source EDR backend stack (Elasticsearch, Kibana, TheHive). Automates secure setup for small orgs, startups, or research to boost threat detection and incident response with zero enterprise licensing costs.
+ # IaC-EDR-Backend
 
-# IaC-EDR-Backend
-
-This repository provides a ready-to-use **Infrastructure as Code (IaC)** setup for deploying an **Endpoint Detection and Response (EDR) backend** using open-source tools.  
-It uses **Ansible** to automate the provisioning and configuration of:
-
-- **Elasticsearch** (centralized security telemetry storage)
-- **Kibana** (visualization and threat dashboard)
-- **TheHive** (incident response and case management)
+This repository provides an automated, reproducible Ansible-based deployment for an EDR (Elasticsearch, Kibana, TheHive) backend stack. It is designed for academic, research, and production use, following best practices for infrastructure as code (IaC).
 
 ---
 
-## 📌 **Project Goals**
-
-- Enable small teams to deploy a full EDR backend with **zero license costs**.
-- Automate backend provisioning with Ansible for repeatability and auditability.
-- Provide an example structure for academic research and production pilots.
+## ✨ Features
+- **One-command deployment**: Run `./deploy.sh` to provision a full EDR backend stack.
+- **Prerequisite checks**: Script verifies Python 3, Ansible, sshpass, and openssl are installed, and prints install instructions if not.
+- **SSH key automation**: Prompts to generate and copy SSH keys for passwordless, secure automation.
+- **Ansible Vault integration**: Sensitive variables are encrypted automatically.
+- **User-friendly prompts**: Clear, step-by-step guidance for all required inputs.
+- **Post-deployment health checks**: Script checks Kibana and TheHive endpoints and prints their status.
+- **Security best practices**: Encourages SSH key use, vault secrets, and firewall rules.
+- **Academic/professional documentation**: README and structure suitable for final year project submission.
 
 ---
 
-## 🗂️ **Repository Structure**
-```plaintext
+## 🚦 Quick Start Guide (for ANYONE)
+
+**1. Clone the repository**
+```sh
+git clone <this-repo-url>
+cd IaC-EDR-Backend
+```
+
+**2. Install prerequisites**
+```sh
+sudo apt update
+sudo apt install -y python3 python3-pip ansible sshpass openssl
+```
+
+**3. Make the deploy script executable**
+```sh
+chmod +x deploy.sh
+```
+
+**4. Run the magic!**
+```sh
+./deploy.sh
+```
+
+**5. Follow the prompts:**
+- If you don’t have an SSH key, the script will help you create one.
+- Enter your backend server’s IP, SSH username, and password.
+- The script can copy your SSH key to the backend for passwordless access.
+- Sit back and watch as your EDR backend is provisioned and configured!
+
+**6. When it’s done:**
+- Access Kibana: `http://<your-server-ip>:5601`
+- Access TheHive: `http://<your-server-ip>:9000`
+- Get Elastic credentials: `sudo cat /etc/elasticsearch/passwords` (on the backend server)
+
+---
+
+## 🪄 How it Works (Behind the Magic)
+1. **Checks your system:** Ensures all required tools are installed.
+2. **Handles SSH keys:** Generates and/or copies them for secure, passwordless automation.
+3. **Initializes secrets:** Creates an Ansible Vault password for encrypting sensitive variables.
+4. **Prompts for your backend server info:** IP, username, password.
+5. **Writes inventory and variables:** Sets up Ansible’s inventory and group variables for your environment.
+6. **Encrypts secrets:** Uses Ansible Vault to protect sensitive data.
+7. **Runs the Ansible playbook:** Provisions and configures Elasticsearch, Kibana, and TheHive on your backend server.
+8. **Checks service health:** Verifies Kibana and TheHive are up and running.
+9. **Prints access info:** Tells you where to find your dashboards and credentials.
+
+---
+
+## 🛠️ Troubleshooting & FAQ
+
+**Q: The script says a package is missing!**
+- A: Copy the install command it prints and run it, then re-run `./deploy.sh`.
+
+**Q: SSH key copy fails or asks for password every time.**
+- A: Make sure the backend server allows SSH from your control node. Try copying the key manually:
+  ```sh
+  ssh-copy-id -i ~/.ssh/id_ed25519.pub <user>@<backend-ip>
+  ```
+
+**Q: Playbook fails with permission errors.**
+- A: Ensure your backend user has sudo privileges.
+
+**Q: Kibana or TheHive health check says [WARN].**
+- A: Wait a minute and try again, or check the backend server logs for errors.
+
+**Q: How do I reset/redeploy?**
+- A: You can re-run `./deploy.sh` as many times as you like. It will overwrite inventory and variables as needed.
+
+**Q: Can I customize versions or settings?**
+- A: Edit `group_vars/edr_backend.yml` before running the script, or after (then re-encrypt with Ansible Vault).
+
+**Q: Is it safe to commit my secrets?**
+- A: Never commit `vault/.vault_pass` or any real secrets. The repo’s `.gitignore` helps protect you.
+
+---
+
+## 🖥️ Sample Output
+```
+[OK] All prerequisites are installed.
+[INFO] No SSH key found in ~/.ssh.
+Generate a new SSH key pair for Ansible control node? [Y/n]: Y
+[OK] SSH key generated.
+[STEP] Initializing Ansible Vault...
+[OK] Vault password created at vault/.vault_pass.
+Enter target Ubuntu server IP: 192.168.1.100
+Enter SSH username [ubuntu]: ubuntu
+Enter SSH password: 
+Copy SSH public key to backend server for passwordless access? [Y/n]: Y
+[OK] SSH key copied.
+[STEP] Writing inventory/hosts.yml...
+[STEP] Writing group_vars/edr_backend.yml...
+[STEP] Starting deployment...
+PLAY [Deploy EDR Backend Stack] ...
+...
+[STEP] Post-deployment health checks...
+Checking Kibana at http://192.168.1.100:5601 ... [UP]
+Checking TheHive at http://192.168.1.100:9000 ... [UP]
+(Elasticsearch is usually not HTTP-browsable, check with: curl -sk http://192.168.1.100:9200)
+
+✅ EDR Backend Successfully Deployed!
+🔗 Kibana Dashboard: http://192.168.1.100:5601
+🔗 TheHive Console: http://192.168.1.100:9000
+ℹ️ Elastic credentials: Run on server: sudo cat /etc/elasticsearch/passwords
+```
+
+---
+
+## 📚 Academic Implementation Requirements
+
+This project was designed to meet the following baseline requirements for an Ansible control node and EDR backend provisioning:
+
+### 3.3.1 Ansible Control Node Requirements
+
+1. **Operating System:**
+   - Ubuntu Server LTS (22.04) is recommended for the control node for stability and support.
+2. **Required Packages:**
+   - The control node should have Python 3, pip, ansible, sshpass, and openssl installed to enable secure SSH, encrypted variable management, and role-based execution.
+3. **Network and Connectivity:**
+   - SSH key pairs should be generated and securely stored on the control node for passwordless, encrypted SSH connections to the backend server. Keys are distributed only to the backend server at this stage.
+4. **Backend Server Provisioning:**
+   - The backend EDR server should be deployed in an isolated lab environment with a static private IP. Firewall rules should restrict SSH access to only the control node’s IP.
+5. **Privileges and Security:**
+   - The backend server must accept SSH connections with sudo privileges, allowing Ansible to perform privileged tasks (e.g., package installation, upgrades, configuration changes).
+6. **Sensitive Data Management:**
+   - Ansible Vault is used to encrypt sensitive variables, SSH keys, and API tokens. TLS/SSL certificates are included in roles to secure Elasticsearch and Kibana communications (HTTPS enforced).
+7. **Playbook Structure:**
+   - The project uses a master playbook (`site.yml`) and modular roles:
+     - `roles/elasticsearch`: Elasticsearch install, GPG key, repo, systemd, TLS certs
+     - `roles/kibana`: Kibana install, config, reverse proxy (if needed), HTTPS
+     - `roles/thehive`: TheHive deploy, config, DB init, web interface test
+8. **Version Control and Reproducibility:**
+   - All playbooks, inventory, and encrypted variable files are version-controlled for traceability and reproducibility.
+
+---
+
+## 🗂️ Repository Structure
+
+```
 IaC-EDR-Backend/
 ├── inventory/       # Inventory files listing your backend servers and groups
 ├── group_vars/      # Group-specific variables (e.g., passwords, tokens)
@@ -31,53 +165,27 @@ IaC-EDR-Backend/
 ├── README.md        # This project description
 ├── .gitignore       # Ignore files (e.g., secrets, local configs)
 └── vault/           # (Optional) Encrypted secrets storage (DO NOT commit vault passwords!)
-
-Explanation:
-
-inventory/ — Defines your target backend server(s) and host groups.
-
-group_vars/ — Stores variables for different host groups (credentials, ports, etc.).
-
-roles/ — Contains modular tasks for Elasticsearch, Kibana, and TheHive setup.
-
-site.yml — Main playbook — runs all roles in order for complete EDR backend provisioning.
-
-ansible.cfg — Ansible’s config file (e.g., SSH settings, default paths).
-
-vault/ — Folder for sensitive secrets encrypted with Ansible Vault — never push your vault keys.
-
 ```
 
-## 🚀 **Quick Start**
+---
 
-1. **Clone this repository**
+## ⚠️ Security Notes
+- **Never commit `vault/.vault_pass` or any real secrets to version control.**
+- The vault password is generated per run and stored locally for Ansible Vault operations.
+- Use SSH keys for secure, passwordless access between control node and backend server.
+- Restrict backend server SSH access to only the control node’s IP via firewall rules.
 
-   ```bash
-   git clone https://github.com/klargdev/IaC-EDR-Backend.git
-   cd IaC-EDR-Backend
+## 📝 Customization
+- Edit `group_vars/edr_backend.yml` (before encryption) to set custom versions, cluster names, or other variables.
+- Extend roles in `roles/` to add handlers, templates, or additional configuration as needed.
+- Add your own TLS/SSL certificates to the appropriate roles for HTTPS enforcement.
 
-   Configure your inventory
+## 📋 Requirements
+- Ansible must be installed on the machine running `deploy.sh`.
+- Target server(s) must be Ubuntu-based and accessible via SSH.
+- SSH key-based authentication is strongly recommended for security and automation.
 
-Add your backend server(s) to inventory/hosts.yml.
+---
 
-Set your variables
-
-Edit group_vars/ and encrypt secrets with ansible-vault.
-
-Run the playbook
-
-ansible-playbook -i inventory/hosts.yml site.yml
-
-##🛡️ **Security Note**
-🚫 Never commit real SSH keys, vault passwords, or API tokens.
-Use .gitignore and Ansible Vault to protect sensitive data.
-
-## **📖 License**
-This project is licensed under the MIT License.
-Feel free to fork and adapt it for your own EDR projects!
-
-
-## **✏️ Author**
-Maintained by Lartey Kpabitey Gabriel.
-Part of a practical case study for a secure, automated EDR deployment.
+**Happy automating!**
 

@@ -1,0 +1,21 @@
+---
+- name: Install TheHive
+  apt:
+    name: thehive
+    state: present
+    update_cache: yes
+
+- name: Configure TheHive
+  template:
+    src: thehive.conf.j2
+    dest: /etc/thehive/application.conf
+    owner: root
+    group: thehive
+    mode: 0660
+  notify: restart thehive
+
+- name: Start and enable service
+  systemd:
+    name: thehive
+    state: started
+    enabled: yes 
