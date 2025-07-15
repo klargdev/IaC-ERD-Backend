@@ -21,16 +21,29 @@ It uses **Ansible** to automate the provisioning and configuration of:
 ---
 
 ## 🗂️ **Repository Structure**
-
 IaC-EDR-Backend/
-├── inventory/ # Inventory hosts files
-├── group_vars/ # Group-specific variables
-├── roles/ # Ansible roles: elasticsearch, kibana, thehive
-├── site.yml # Master playbook to run all roles
-├── ansible.cfg # Ansible configuration
-├── README.md # This file
-├── .gitignore # Ignore secrets, local configs, etc.
-└── vault/ # (Optional) Encrypted secrets (do not push your vault passwords!)
+├── inventory/       # Inventory files listing your backend servers and groups
+├── group_vars/      # Group-specific variables (e.g., passwords, tokens)
+├── roles/           # Ansible roles (e.g., elasticsearch, kibana, thehive)
+├── site.yml         # Master playbook that ties all roles together
+├── ansible.cfg      # Ansible configuration file
+├── README.md        # This project description
+├── .gitignore       # Ignore files (e.g., secrets, local configs)
+└── vault/           # (Optional) Encrypted secrets storage (DO NOT commit vault passwords!)
+
+Explanation:
+
+inventory/ — Defines your target backend server(s) and host groups.
+
+group_vars/ — Stores variables for different host groups (credentials, ports, etc.).
+
+roles/ — Contains modular tasks for Elasticsearch, Kibana, and TheHive setup.
+
+site.yml — Main playbook — runs all roles in order for complete EDR backend provisioning.
+
+ansible.cfg — Ansible’s config file (e.g., SSH settings, default paths).
+
+vault/ — Folder for sensitive secrets encrypted with Ansible Vault — never push your vault keys.
 
 
 ---
