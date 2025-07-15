@@ -29,6 +29,20 @@
     group: elasticsearch
     mode: 0750
 
+- name: Ensure Elasticsearch log directory exists and is writable
+  file:
+    path: /usr/share/elasticsearch/logs
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: Stop Elasticsearch if running (to apply config changes)
+  systemd:
+    name: elasticsearch
+    state: stopped
+  ignore_errors: yes
+
 - name: Generate CA private key
   command: openssl genrsa -out /etc/elasticsearch/certs/ca.key 4096
   args:
