@@ -20,7 +20,7 @@ This repository provides an automated, reproducible Ansible-based deployment for
 
 **1. Clone the repository**
 ```sh
-git clone <this-repo-url>
+git clone git@github.com:klargdev/IaC-ERD-Backend.git
 cd IaC-EDR-Backend
 ```
 
