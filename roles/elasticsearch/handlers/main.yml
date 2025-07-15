@@ -1,2 +1,7 @@
 ---
 # Handlers for elasticsearch role 
+---
+- name: restart elasticsearch
+  systemd:
+    name: elasticsearch
+    state: restarted 
