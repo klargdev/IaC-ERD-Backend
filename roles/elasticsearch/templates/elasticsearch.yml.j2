@@ -1,9 +1,13 @@
 cluster.name: {{ es_cluster_name | default("edr-cluster") }}
 node.name: {{ ansible_hostname }}
+path.data: /var/lib/elasticsearch
+path.logs: /var/log/elasticsearch
 network.host: 0.0.0.0
 http.port: 9200
 discovery.type: single-node
 xpack.security.enabled: true
+
+# SSL Configuration
 xpack.security.http.ssl.enabled: true
 xpack.security.http.ssl.key: /etc/elasticsearch/certs/elasticsearch.key
 xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/elasticsearch.crt

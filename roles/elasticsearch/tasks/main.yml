@@ -37,6 +37,14 @@
     group: elasticsearch
     mode: 0755
 
+- name: Ensure Elasticsearch data directory exists and is writable
+  file:
+    path: /var/lib/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
 - name: Stop Elasticsearch if running (to apply config changes)
   systemd:
     name: elasticsearch
@@ -90,6 +98,35 @@
     name: elasticsearch
     state: started
     enabled: yes
+  register: elasticsearch_start_result
+  failed_when: false
+
+- name: Check Elasticsearch status if startup failed
+  shell: systemctl status elasticsearch
+  register: elasticsearch_status_output
+  when: elasticsearch_start_result is failed
+  failed_when: false
+
+- name: Display Elasticsearch status if failed
+  debug:
+    msg: "{{ elasticsearch_status_output.stdout_lines }}"
+  when: elasticsearch_start_result is failed
+
+- name: Check Elasticsearch logs if startup failed
+  shell: journalctl -xeu elasticsearch.service --no-pager | tail -20
+  register: elasticsearch_logs_output
+  when: elasticsearch_start_result is failed
+  failed_when: false
+
+- name: Display Elasticsearch logs if failed
+  debug:
+    msg: "{{ elasticsearch_logs_output.stdout_lines }}"
+  when: elasticsearch_start_result is failed
+
+- name: Fail with clear error message
+  fail:
+    msg: "Elasticsearch failed to start. Check the logs above for the specific error."
+  when: elasticsearch_start_result is failed
 
 - name: Wait for Elasticsearch to be ready
   uri:
