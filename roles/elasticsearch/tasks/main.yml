@@ -89,4 +89,27 @@
   systemd:
     name: elasticsearch
     state: started
-    enabled: yes 
+    enabled: yes
+
+- name: Wait for Elasticsearch to be ready
+  uri:
+    url: "https://localhost:9200"
+    method: GET
+    validate_certs: no
+    status_code: 200
+  register: elasticsearch_health
+  until: elasticsearch_health.status == 200
+  retries: 30
+  delay: 10
+  ignore_errors: yes
+
+- name: Verify Elasticsearch is running
+  systemd:
+    name: elasticsearch
+    state: started
+  register: elasticsearch_status
+
+- name: Fail if Elasticsearch is not running
+  fail:
+    msg: "Elasticsearch failed to start. Check logs with: sudo journalctl -xeu elasticsearch.service"
+  when: elasticsearch_status.status.ActiveState != "active" 
