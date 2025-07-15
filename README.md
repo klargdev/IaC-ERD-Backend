@@ -31,7 +31,7 @@ sudo apt update && sudo apt install -y git
 
 **2. Clone the repository**
 ```sh
-git clone <this-repo-url>
+git clone git@github.com:klargdev/IaC-ERD-Backend.git
 cd IaC-EDR-Backend
 ```
 
