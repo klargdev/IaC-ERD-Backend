@@ -68,16 +68,16 @@ Run the playbook
 
 ansible-playbook -i inventory/hosts.yml site.yml
 ```
-##🛡️ Security Note
+##🛡️ **Security Note**
 🚫 Never commit real SSH keys, vault passwords, or API tokens.
 Use .gitignore and Ansible Vault to protect sensitive data.
 
-##📖 License
+## **📖 License**
 This project is licensed under the MIT License.
 Feel free to fork and adapt it for your own EDR projects!
 
 
-##✏️ Author
+## **✏️ Author**
 Maintained by Lartey Kpabitey Gabriel.
 Part of a practical case study for a secure, automated EDR deployment.
 
