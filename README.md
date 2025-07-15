@@ -58,10 +58,15 @@ chmod +x deploy.sh
 ```
 
 **6. Follow the prompts:**
-- If you don’t have an SSH key, the script will help you create one.
+- If you don’t have an SSH key, the script will help you create one (for remote deployments).
 - **When asked for the target Ubuntu server IP:**
-  - This is the IP address of the backend Ubuntu server where you want to deploy the EDR stack (not your own laptop).
-  - To find it, log in to your backend server and run:
+  - **If you are deploying on the same machine (local deployment):**
+    - Enter `127.0.0.1` or `localhost` as the target IP.
+    - SSH key and password prompts will be skipped, and Ansible will run locally.
+  - **If you are deploying to a remote server:**
+    - Enter the remote server's IP address.
+    - The script will prompt for SSH username and password, and can copy your SSH key for passwordless access.
+  - To find the IP, log in to your backend server and run:
     ```sh
     ip a
     # or
@@ -69,8 +74,6 @@ chmod +x deploy.sh
     ```
   - Use the IP address shown (e.g., `192.168.1.100`).
   - If using a cloud server, use the public or private IP from your cloud dashboard.
-- Enter your backend server’s SSH username and password.
-- The script can copy your SSH key to the backend for passwordless access.
 - Sit back and watch as your EDR backend is provisioned and configured!
 
 **7. When it’s done:**
