@@ -31,9 +31,11 @@ sudo apt update && sudo apt install -y git
 
 **2. Clone the repository**
 ```sh
-git clone git@github.com:klargdev/IaC-ERD-Backend.git
+git clone https://github.com/klargdev/IaC-ERD-Backend.git
 cd IaC-EDR-Backend
 ```
+> If you prefer SSH and have set up your GitHub SSH key, you can use:
+> `git clone git@github.com:klargdev/IaC-ERD-Backend.git`
 
 **3. Install prerequisites**
 ```sh
@@ -186,7 +188,7 @@ IaC-EDR-Backend/
 - Restrict backend server SSH access to only the control node’s IP via firewall rules.
 
 ## 📝 Customization
-- Edit `group_vars/edr_backend.yml` (before encryption) to set custom versions, cluster names, or other variables.
+- Edit `group_vars/edr_backend.yml` before running the script, or after (then re-encrypt with Ansible Vault).
 - Extend roles in `roles/` to add handlers, templates, or additional configuration as needed.
 - Add your own TLS/SSL certificates to the appropriate roles for HTTPS enforcement.
 
