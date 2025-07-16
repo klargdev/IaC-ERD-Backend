@@ -201,3 +201,16 @@
   when:
     - passwords_flag.stat.exists
     - (setup_passwords_output is not defined) or (setup_passwords_output.rc != 0) 
+
+- name: Save elastic credentials to file
+  copy:
+    dest: /etc/elasticsearch/elastic-credentials.txt
+    content: |
+      Username: elastic
+      Password: {{ elastic_auto_password | default('UNKNOWN - see setup-passwords output above') }}
+    owner: root
+    group: root
+    mode: '0600'
+  when:
+    - elastic_auto_password is defined
+    - elastic_auto_password != '' 

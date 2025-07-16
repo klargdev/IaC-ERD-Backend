@@ -44,7 +44,7 @@ cd IaC-EDR-Backend
 
 **3. Install prerequisites**
 ```sh
-sudo apt install -y python3 python3-pip ansible sshpass openssl
+sudo apt install -y python3 python3-pip ansible sshpass openssl curl
 ```
 
 **4. Make the deploy script executable**
@@ -121,6 +121,9 @@ chmod +x deploy.sh
 
 **Q: Kibana or TheHive health check says [WARN].**
 - A: Wait a minute and try again, or check the backend server logs for errors.
+
+**Q: Health checks say curl not found!**
+- A: Install curl with: sudo apt install -y curl
 
 **Q: How do I reset/redeploy?**
 - A: You can re-run `./deploy.sh` as many times as you like. It will overwrite inventory and variables as needed.

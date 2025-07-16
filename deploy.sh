@@ -120,6 +120,11 @@ function check_service() {
   fi
 }
 
+if ! command -v curl >/dev/null 2>&1; then
+  echo "[ERROR] curl is not installed. Please run: sudo apt install -y curl"
+  exit 1
+fi
+
 check_service "Kibana" "https://$TARGET_IP:5601" "Kibana"
 check_service "TheHive" "https://$TARGET_IP:9000" "TheHive"
 echo "(Elasticsearch is usually not HTTP-browsable, check with: curl -sk https://$TARGET_IP:9200)"
