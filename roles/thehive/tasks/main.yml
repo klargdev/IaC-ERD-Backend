@@ -10,11 +10,16 @@
     state: directory
     mode: 0755
 
-- name: Download TheHive GPG key to keyrings
+- name: Download TheHive GPG key (ASCII)
   get_url:
     url: https://raw.githubusercontent.com/TheHive-Project/TheHive/master/PGP-PUBLIC-KEY
-    dest: /etc/apt/keyrings/thehive.gpg
+    dest: /etc/apt/keyrings/thehive.asc
     mode: '0644'
+
+- name: Convert TheHive GPG key to binary format
+  command: gpg --dearmor -o /etc/apt/keyrings/thehive.gpg /etc/apt/keyrings/thehive.asc
+  args:
+    creates: /etc/apt/keyrings/thehive.gpg
 
 - name: Add TheHive repository (new keyring method)
   apt_repository:
