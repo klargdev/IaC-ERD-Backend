@@ -227,6 +227,21 @@
     - elastic_auto_password is defined
     - elastic_auto_password != '' 
 
+- name: Ensure log4j2.properties exists
+  copy:
+    dest: /etc/elasticsearch/log4j2.properties
+    content: |
+      status = error
+      appender.console.type = Console
+      appender.console.name = console
+      appender.console.layout.type = PatternLayout
+      appender.console.layout.pattern = [%d{ISO8601}] [%t] %-5p %c %marker - %m%n
+      rootLogger.level = info
+      rootLogger.appenderRef.console.ref = console
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+
 - name: Print final instructions for credentials
   debug:
     msg: |
