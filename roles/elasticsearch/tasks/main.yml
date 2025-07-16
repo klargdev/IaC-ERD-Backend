@@ -72,6 +72,21 @@
     group: elasticsearch
     mode: 0755
 
+- name: Ensure Elasticsearch temp directory exists and is writable
+  file:
+    path: /tmp/elasticsearch
+    state: directory
+    owner: elasticsearch
+    group: elasticsearch
+    mode: 0755
+
+- name: Ensure Elasticsearch user can write to /tmp
+  file:
+    path: /tmp
+    state: directory
+    mode: 01777
+    recurse: no
+
 - name: Stop Elasticsearch if running (to apply config changes)
   systemd:
     name: elasticsearch
