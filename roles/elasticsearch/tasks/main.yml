@@ -156,7 +156,7 @@
   become: yes
   become_user: elasticsearch
   register: reset_password_output
-  changed_when: "Password for the [elastic] user successfully reset" in reset_password_output.stdout
+  changed_when: "'Password for the [elastic] user successfully reset' in reset_password_output.stdout"
   when: elasticsearch_start_result is not failed
 
 - name: Print Elasticsearch credentials
