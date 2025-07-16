@@ -214,3 +214,20 @@
   when:
     - elastic_auto_password is defined
     - elastic_auto_password != '' 
+
+- name: Print final instructions for credentials
+  debug:
+    msg: |
+      ✅ EDR Backend deployment complete!
+      
+      To generate or reset your login credentials for Elasticsearch, Kibana, and TheHive, run:
+        sudo ./generate-edr-credentials.sh
+      
+      Your credentials will be printed and saved to /etc/elasticsearch/edr-credentials.txt
+      
+      Access your services:
+        - Elasticsearch: https://localhost:9200
+        - Kibana:       https://localhost:5601
+        - TheHive:      https://localhost:9000
+      
+      For more help, see the README or contact your administrator. 

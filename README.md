@@ -79,10 +79,13 @@ chmod +x deploy.sh
 **7. When it’s done:**
 - Access Kibana: `https://<your-server-ip>:5601`
 - Access TheHive: `https://<your-server-ip>:9000`
-- **Elasticsearch credentials will be printed at the end of the deployment!**
-  - Username: `elastic`
-  - Password: (see playbook output)
-- Download the CA certificate from `/etc/elasticsearch/certs/ca.crt` if you want to trust it in your browser.
+- Access Elasticsearch: `https://<your-server-ip>:9200`
+- **To generate or reset your login credentials at any time, run:**
+  ```sh
+  sudo ./generate-edr-credentials.sh
+  ```
+- **Your credentials will be printed and saved to:**
+  `/etc/elasticsearch/edr-credentials.txt`
 
 ---
 
