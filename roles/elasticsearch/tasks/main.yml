@@ -76,11 +76,6 @@
   args:
     creates: /etc/elasticsearch/certs/elasticsearch.crt
 
-- name: Create PKCS12 keystore for Elasticsearch transport SSL
-  command: openssl pkcs12 -export -in /etc/elasticsearch/certs/elasticsearch.crt -inkey /etc/elasticsearch/certs/elasticsearch.key -out /etc/elasticsearch/certs/elasticsearch.p12 -passout pass:elasticsearch
-  args:
-    creates: /etc/elasticsearch/certs/elasticsearch.p12
-
 - name: Set permissions on certs
   file:
     path: /etc/elasticsearch/certs

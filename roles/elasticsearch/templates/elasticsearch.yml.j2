@@ -13,10 +13,5 @@ xpack.security.http.ssl.key: /etc/elasticsearch/certs/elasticsearch.key
 xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/elasticsearch.crt
 xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
 
-# Transport SSL Configuration
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.verification_mode: certificate
-xpack.security.transport.ssl.keystore.path: /etc/elasticsearch/certs/elasticsearch.p12
-xpack.security.transport.ssl.truststore.path: /etc/elasticsearch/certs/elasticsearch.p12
-xpack.security.transport.ssl.keystore.secure_password: elasticsearch
-xpack.security.transport.ssl.truststore.secure_password: elasticsearch 
+# Transport SSL Configuration (disabled for single-node)
+xpack.security.transport.ssl.enabled: false 
