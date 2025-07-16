@@ -240,3 +240,45 @@ IaC-EDR-Backend/
 
 **Happy automating!**
 
+## 🧹 How to Remove/Reset the EDR Stack (Full Cleanup)
+
+If you want to completely remove your old EDR stack (Elasticsearch, Kibana, TheHive) and start again, follow these steps:
+
+1. **Stop and disable services:**
+   ```sh
+   sudo systemctl stop elasticsearch kibana thehive
+   sudo systemctl disable elasticsearch kibana thehive
+   ```
+2. **Uninstall the packages:**
+   ```sh
+   sudo apt remove --purge -y elasticsearch kibana thehive
+   sudo apt autoremove --purge -y
+   ```
+3. **Remove configuration, data, and log files:**
+   ```sh
+   sudo rm -rf /etc/elasticsearch /var/lib/elasticsearch /var/log/elasticsearch
+   sudo rm -rf /etc/kibana /var/lib/kibana /var/log/kibana
+   sudo rm -rf /etc/thehive /opt/thehive /var/log/thehive
+   sudo rm -rf /tmp/thehive.deb
+   sudo rm -rf /etc/apt/keyrings/thehive.gpg /etc/apt/keyrings/elastic.gpg
+   ```
+4. **Remove old repositories:**
+   ```sh
+   sudo rm -f /etc/apt/sources.list.d/elastic-8.x.list
+   sudo rm -f /etc/apt/sources.list.d/thehive.list
+   ```
+5. **Update apt cache:**
+   ```sh
+   sudo apt update
+   ```
+6. **(Optional) Remove old credentials file:**
+   ```sh
+   sudo rm -f /etc/elasticsearch/edr-credentials.txt
+   ```
+7. **Reboot (recommended):**
+   ```sh
+   sudo reboot
+   ```
+
+After reboot, you can start fresh with a new deployment!
+
