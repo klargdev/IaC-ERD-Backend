@@ -1,2 +1,7 @@
 ---
 # Handlers for kibana role 
+---
+- name: restart kibana
+  systemd:
+    name: kibana
+    state: restarted 
