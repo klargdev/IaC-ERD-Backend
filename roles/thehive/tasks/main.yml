@@ -4,9 +4,21 @@
     url: https://raw.githubusercontent.com/TheHive-Project/TheHive/master/PGP-PUBLIC-KEY
     state: present
 
-- name: Add TheHive repository
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: 0755
+
+- name: Download TheHive GPG key to keyrings
+  get_url:
+    url: https://raw.githubusercontent.com/TheHive-Project/TheHive/master/PGP-PUBLIC-KEY
+    dest: /etc/apt/keyrings/thehive.gpg
+    mode: '0644'
+
+- name: Add TheHive repository (new keyring method)
   apt_repository:
-    repo: "deb https://deb.thehive-project.org release main"
+    repo: "deb [signed-by=/etc/apt/keyrings/thehive.gpg] https://deb.thehive-project.org release main"
     state: present
     filename: thehive
 
@@ -14,10 +26,23 @@
   apt:
     update_cache: yes
 
-- name: Install TheHive
+- name: Try to install TheHive from repo
   apt:
     name: thehive
     state: present
+  register: thehive_install
+  ignore_errors: yes
+
+- name: Download TheHive .deb if repo install failed
+  get_url:
+    url: https://github.com/TheHive-Project/TheHive/releases/download/5.2.4/thehive_5.2.4-1_all.deb
+    dest: /tmp/thehive.deb
+  when: thehive_install is failed
+
+- name: Install TheHive from .deb if repo install failed
+  apt:
+    deb: /tmp/thehive.deb
+  when: thehive_install is failed
 
 - name: Create certs directory
   file:

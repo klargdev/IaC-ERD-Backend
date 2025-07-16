@@ -4,14 +4,21 @@
     name: [openjdk-17-jdk, apt-transport-https, openssl]
     state: present
 
-- name: Add Elastic GPG key
-  apt_key:
-    url: "https://artifacts.elastic.co/GPG-KEY-elasticsearch"
-    state: present
+- name: Ensure keyrings directory exists
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: 0755
 
-- name: Add repository
+- name: Download Elastic GPG key to keyrings
+  get_url:
+    url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+    dest: /etc/apt/keyrings/elastic.gpg
+    mode: '0644'
+
+- name: Add Elastic repository (new keyring method)
   apt_repository:
-    repo: "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
+    repo: "deb [signed-by=/etc/apt/keyrings/elastic.gpg] https://artifacts.elastic.co/packages/8.x/apt stable main"
     state: present
     filename: elastic-8.x
 
