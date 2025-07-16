@@ -1,2 +1,3 @@
 ---
-elastic_password: "ChangeMe-EDR-2024!" 
+elastic_password: "ChangeMe-EDR-2024!"
+kibana_system_password: "ChangeMe-Kibana-2024!" 
