@@ -151,18 +151,53 @@
     msg: "Elasticsearch failed to start. Check logs with: sudo journalctl -xeu elasticsearch.service"
   when: elasticsearch_status.status.ActiveState != "active"
 
-- name: Set elastic user password
-  command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b -i --password "{{ elastic_password }}"
-  become: yes
-  become_user: elasticsearch
-  register: reset_password_output
-  changed_when: "'Password for the [elastic] user successfully reset' in reset_password_output.stdout"
-  when: elasticsearch_start_result is not failed
+- name: Check if elasticsearch-setup-passwords has already been run
+  stat:
+    path: /etc/elasticsearch/passwords_set.flag
+  register: passwords_flag
 
-- name: Print Elasticsearch credentials
+- name: Run elasticsearch-setup-passwords auto and capture output
+  command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
+  register: setup_passwords_output
+  changed_when: "Changed password for user [elastic]" in setup_passwords_output.stdout
+  when:
+    - elasticsearch_start_result is not failed
+    - not passwords_flag.stat.exists
+  ignore_errors: yes
+
+- name: Create flag file after password setup
+  file:
+    path: /etc/elasticsearch/passwords_set.flag
+    state: touch
+  when:
+    - elasticsearch_start_result is not failed
+    - setup_passwords_output is defined
+    - setup_passwords_output.rc == 0
+    - not passwords_flag.stat.exists
+
+- name: Extract elastic user password from setup-passwords output
+  set_fact:
+    elastic_auto_password: "{{ setup_passwords_output.stdout | regex_search('PASSWORD elastic = (.+)', '\\1') }}"
+  when:
+    - setup_passwords_output is defined
+    - setup_passwords_output.stdout is defined
+    - setup_passwords_output.rc == 0
+
+- name: Print Elasticsearch credentials (if just set)
   debug:
     msg: |
       Elasticsearch is ready!
       Username: elastic
-      Password: {{ elastic_password }}
-  when: elasticsearch_start_result is not failed 
+      Password: {{ elastic_auto_password | default('UNKNOWN - see setup-passwords output above') }}
+  when:
+    - elasticsearch_start_result is not failed
+    - setup_passwords_output is defined
+    - setup_passwords_output.rc == 0
+
+- name: Print message if passwords already set
+  debug:
+    msg: |
+      Elasticsearch passwords have already been set. If you need the elastic password, see your previous deployment output or reset manually.
+  when:
+    - passwords_flag.stat.exists
+    - (setup_passwords_output is not defined) or (setup_passwords_output.rc != 0) 

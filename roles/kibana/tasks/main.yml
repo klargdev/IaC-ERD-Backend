@@ -45,6 +45,10 @@
     mode: 0750
     recurse: yes
 
+- name: Set elastic password for Kibana
+  set_fact:
+    elastic_password: "{{ hostvars[inventory_hostname].elastic_auto_password | default('') }}"
+
 - name: Configure Kibana
   template:
     src: kibana.yml.j2
