@@ -289,3 +289,11 @@
         - TheHive:      https://localhost:9000
       
       For more help, see the README or contact your administrator. 
+
+- name: Ensure Elasticsearch config directory is writable
+  file:
+    path: /etc/elasticsearch
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: 0775 
