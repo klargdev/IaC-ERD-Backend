@@ -10,11 +10,16 @@
     state: directory
     mode: 0755
 
-- name: Download Elastic GPG key to keyrings
+- name: Download Elastic GPG key (ASCII)
   get_url:
     url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
-    dest: /etc/apt/keyrings/elastic.gpg
+    dest: /etc/apt/keyrings/elastic.asc
     mode: '0644'
+
+- name: Convert Elastic GPG key to binary format
+  command: gpg --dearmor -o /etc/apt/keyrings/elastic.gpg /etc/apt/keyrings/elastic.asc
+  args:
+    creates: /etc/apt/keyrings/elastic.gpg
 
 - name: Add Elastic repository (new keyring method)
   apt_repository:
