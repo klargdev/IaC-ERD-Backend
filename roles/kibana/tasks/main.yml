@@ -58,8 +58,50 @@
     mode: 0660
   notify: restart kibana
 
+- name: Ensure curl is installed
+  apt:
+    name: curl
+    state: present
+
 - name: Start and enable service
   systemd:
     name: kibana
     state: started
-    enabled: yes 
+    enabled: yes
+  register: kibana_start_result
+  failed_when: false
+
+- name: Check Kibana status if startup failed
+  shell: systemctl status kibana
+  register: kibana_status_output
+  when: kibana_start_result is failed
+  failed_when: false
+
+- name: Display Kibana status if failed
+  debug:
+    msg: "{{ kibana_status_output.stdout_lines }}"
+  when: kibana_start_result is failed
+
+- name: Check Kibana logs if startup failed
+  shell: |
+    if [ -f /var/log/kibana/kibana.log ]; then
+      tail -50 /var/log/kibana/kibana.log
+    else
+      echo 'No Kibana log file found.'
+    fi
+  register: kibana_logs_output
+  when: kibana_start_result is failed
+  failed_when: false
+
+- name: Display Kibana logs if failed
+  debug:
+    msg: "{{ kibana_logs_output.stdout_lines }}"
+  when: kibana_start_result is failed
+
+- name: Fail with clear error message
+  fail:
+    msg: |
+      Kibana failed to start. Check the logs above for the specific error.
+      Common causes: config file errors, missing dependencies, permissions, or Elasticsearch not running.
+      See the README for troubleshooting steps.
+  when: kibana_start_result is failed 

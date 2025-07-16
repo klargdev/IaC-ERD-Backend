@@ -113,4 +113,41 @@
   systemd:
     name: thehive
     state: started
-    enabled: yes 
+    enabled: yes
+  register: thehive_start_result
+  failed_when: false
+
+- name: Check TheHive status if startup failed
+  shell: systemctl status thehive
+  register: thehive_status_output
+  when: thehive_start_result is failed
+  failed_when: false
+
+- name: Display TheHive status if failed
+  debug:
+    msg: "{{ thehive_status_output.stdout_lines }}"
+  when: thehive_start_result is failed
+
+- name: Check TheHive logs if startup failed
+  shell: |
+    if [ -f /var/log/thehive/application.log ]; then
+      tail -50 /var/log/thehive/application.log
+    else
+      echo 'No TheHive log file found.'
+    fi
+  register: thehive_logs_output
+  when: thehive_start_result is failed
+  failed_when: false
+
+- name: Display TheHive logs if failed
+  debug:
+    msg: "{{ thehive_logs_output.stdout_lines }}"
+  when: thehive_start_result is failed
+
+- name: Fail with clear error message
+  fail:
+    msg: |
+      TheHive failed to start. Check the logs above for the specific error.
+      Common causes: config file errors, missing dependencies, permissions, or Elasticsearch not running.
+      See the README for troubleshooting steps.
+  when: thehive_start_result is failed 

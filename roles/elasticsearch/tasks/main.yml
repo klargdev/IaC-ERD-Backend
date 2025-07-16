@@ -105,6 +105,11 @@
     mode: 0660
   notify: restart elasticsearch
 
+- name: Ensure Java is installed
+  apt:
+    name: openjdk-17-jdk
+    state: present
+
 - name: Start and enable service
   systemd:
     name: elasticsearch
@@ -125,7 +130,14 @@
   when: elasticsearch_start_result is failed
 
 - name: Check Elasticsearch logs if startup failed
-  shell: journalctl -xeu elasticsearch.service --no-pager | tail -20
+  shell: |
+    if [ -f /var/log/elasticsearch/elasticsearch.log ]; then
+      tail -50 /var/log/elasticsearch/elasticsearch.log
+    elif [ -f /var/log/elasticsearch/edr-production.log ]; then
+      tail -50 /var/log/elasticsearch/edr-production.log
+    else
+      echo 'No Elasticsearch log file found.'
+    fi
   register: elasticsearch_logs_output
   when: elasticsearch_start_result is failed
   failed_when: false
@@ -137,7 +149,10 @@
 
 - name: Fail with clear error message
   fail:
-    msg: "Elasticsearch failed to start. Check the logs above for the specific error."
+    msg: |
+      Elasticsearch failed to start. Check the logs above for the specific error.
+      Common causes: config file errors, missing Java, missing log4j2.properties, permissions, or missing dependencies.
+      See the README for troubleshooting steps.
   when: elasticsearch_start_result is failed
 
 - name: Wait for Elasticsearch to be ready
