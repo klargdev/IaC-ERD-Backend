@@ -149,4 +149,20 @@
 - name: Fail if Elasticsearch is not running
   fail:
     msg: "Elasticsearch failed to start. Check logs with: sudo journalctl -xeu elasticsearch.service"
-  when: elasticsearch_status.status.ActiveState != "active" 
+  when: elasticsearch_status.status.ActiveState != "active"
+
+- name: Set elastic user password
+  command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b -i --password "{{ elastic_password }}"
+  become: yes
+  become_user: elasticsearch
+  register: reset_password_output
+  changed_when: "Password for the [elastic] user successfully reset" in reset_password_output.stdout
+  when: elasticsearch_start_result is not failed
+
+- name: Print Elasticsearch credentials
+  debug:
+    msg: |
+      Elasticsearch is ready!
+      Username: elastic
+      Password: {{ elastic_password }}
+  when: elasticsearch_start_result is not failed 

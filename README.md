@@ -79,8 +79,16 @@ chmod +x deploy.sh
 **7. When it’s done:**
 - Access Kibana: `https://<your-server-ip>:5601`
 - Access TheHive: `https://<your-server-ip>:9000`
-- Get Elastic credentials: `sudo cat /etc/elasticsearch/passwords` (on the backend server)
+- **Elasticsearch credentials will be printed at the end of the deployment!**
+  - Username: `elastic`
+  - Password: (see playbook output)
 - Download the CA certificate from `/etc/elasticsearch/certs/ca.crt` if you want to trust it in your browser.
+
+---
+
+> **Security Note:**
+> The default password for the `elastic` user is set in `group_vars/edr_backend.yml` as `elastic_password`. **Change this password for production deployments!**
+> The password is printed at the end of the deployment for your convenience and is also used for Kibana to connect to Elasticsearch.
 
 ---
 
@@ -143,15 +151,21 @@ Copy SSH public key to backend server for passwordless access? [Y/n]: Y
 [STEP] Starting deployment...
 PLAY [Deploy EDR Backend Stack] ...
 ...
+TASK [elasticsearch : Print Elasticsearch credentials] *********************************
+  msg:
+    Elasticsearch is ready!
+    Username: elastic
+    Password: ChangeMe-EDR-2024!
+...
 [STEP] Post-deployment health checks...
 Checking Kibana at http://192.168.1.100:5601 ... [UP]
 Checking TheHive at http://192.168.1.100:9000 ... [UP]
 (Elasticsearch is usually not HTTP-browsable, check with: curl -sk http://192.168.1.100:9200)
 
 ✅ EDR Backend Successfully Deployed!
-🔗 Kibana Dashboard: http://192.168.1.100:5601
-🔗 TheHive Console: http://192.168.1.100:9000
-ℹ️ Elastic credentials: Run on server: sudo cat /etc/elasticsearch/passwords
+🔗 Kibana Dashboard: https://192.168.1.100:5601
+🔗 TheHive Console: https://192.168.1.100:9000
+ℹ️ Elastic credentials: Username: elastic, Password: ChangeMe-EDR-2024!
 ```
 
 ---

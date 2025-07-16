@@ -2,6 +2,7 @@
 # Elasticsearch
 es_cluster_name: "edr-production"
 es_version: "8.12.0"
+elastic_password: "ChangeMe-EDR-2024!"
 
 # Kibana
 kibana_version: "8.12.0"
