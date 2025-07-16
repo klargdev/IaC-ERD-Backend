@@ -1,9 +1,23 @@
 ---
+- name: Add TheHive GPG key
+  apt_key:
+    url: https://raw.githubusercontent.com/TheHive-Project/TheHive/master/PGP-PUBLIC-KEY
+    state: present
+
+- name: Add TheHive repository
+  apt_repository:
+    repo: "deb https://deb.thehive-project.org release main"
+    state: present
+    filename: thehive
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
 - name: Install TheHive
   apt:
     name: thehive
     state: present
-    update_cache: yes
 
 - name: Create certs directory
   file:
