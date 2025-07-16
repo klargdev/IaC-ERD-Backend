@@ -159,7 +159,7 @@
 - name: Run elasticsearch-setup-passwords auto and capture output
   command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
   register: setup_passwords_output
-  changed_when: "Changed password for user [elastic]" in setup_passwords_output.stdout
+  changed_when: "'Changed password for user [elastic]' in setup_passwords_output.stdout"
   when:
     - elasticsearch_start_result is not failed
     - not passwords_flag.stat.exists
