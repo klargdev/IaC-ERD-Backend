@@ -33,6 +33,22 @@
     state: present
     update_cache: yes
 
+- name: Ensure log4j2.properties exists
+  copy:
+    dest: /etc/elasticsearch/log4j2.properties
+    content: |
+      status = error
+      appender.console.type = Console
+      appender.console.name = console
+      appender.console.layout.type = PatternLayout
+      appender.console.layout.pattern = [%d{ISO8601}] [%t] %-5p %c %marker - %m%n
+      rootLogger.level = info
+      rootLogger.appenderRef.console.ref = console
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+  always_run: yes
+
 - name: Create certs directory
   file:
     path: /etc/elasticsearch/certs
@@ -147,7 +163,7 @@
     msg: "{{ elasticsearch_logs_output.stdout_lines }}"
   when: elasticsearch_start_result is failed
 
-- name: Fail with clear error message
+- name: Fail with clear error message if startup failed
   fail:
     msg: |
       Elasticsearch failed to start. Check the logs above for the specific error.
@@ -155,7 +171,7 @@
       See the README for troubleshooting steps.
   when: elasticsearch_start_result is failed
 
-- name: Wait for Elasticsearch to be ready
+- name: Wait for Elasticsearch to be ready (only if startup succeeded)
   uri:
     url: "https://localhost:9200"
     method: GET
@@ -166,6 +182,7 @@
   retries: 30
   delay: 10
   ignore_errors: yes
+  when: elasticsearch_start_result is not failed
 
 - name: Verify Elasticsearch is running
   systemd:
@@ -241,21 +258,6 @@
   when:
     - elastic_auto_password is defined
     - elastic_auto_password != '' 
-
-- name: Ensure log4j2.properties exists
-  copy:
-    dest: /etc/elasticsearch/log4j2.properties
-    content: |
-      status = error
-      appender.console.type = Console
-      appender.console.name = console
-      appender.console.layout.type = PatternLayout
-      appender.console.layout.pattern = [%d{ISO8601}] [%t] %-5p %c %marker - %m%n
-      rootLogger.level = info
-      rootLogger.appenderRef.console.ref = console
-    owner: root
-    group: elasticsearch
-    mode: '0660'
 
 - name: Print final instructions for credentials
   debug:
