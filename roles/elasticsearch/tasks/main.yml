@@ -47,7 +47,6 @@
     owner: root
     group: elasticsearch
     mode: '0660'
-  always_run: yes
 
 - name: Create certs directory
   file:
