@@ -71,7 +71,9 @@
       
       # Disable explicit garbage collection
       -XX:+UseG1GC
-      -XX:G1ReservePercent=25    -XX:InitiatingHeapOccupancyPercent=75      
+      -XX:G1ReservePercent=25
+      -XX:InitiatingHeapOccupancyPercent=75
+      
       # JVM temporary directory
       -Djava.io.tmpdir=${ES_TMPDIR}
       
@@ -88,7 +90,7 @@
       # specify an alternative path for JVM fatal error logs
       -XX:ErrorFile=logs/hs_err_pid%p.log
       
-      # JDK9 options
+      # JDK 9 options
       -XX:+UseConcMarkSweepGC
       -XX:CMSInitiatingOccupancyFraction=75
       -XX:+UseCMSInitiatingOccupancyOnly
@@ -372,25 +374,14 @@
       ## Expert settings
       ################################################################
       
-      # The maximum number of file descriptors that may be opened by a process
-      # is set by the system administrator. Elasticsearch uses a lot of file
-      # descriptors or file handles. It is recommended that the system
-      # administrator increase the limit on the number of open file descriptors
-      # to65536r higher.
-      #
-      # The `ulimit -n` command can be used to check the current limit.
-      #
-      # The following JVM arguments are not required if the system is configured
-      # to allow the process to use unlimited file descriptors.
-      #
-      # -XX:-MaxFDLimit
-      
       # Make sure that the JVM is run with the server VM
       -server
       
       # Disable explicit garbage collection
       -XX:+UseG1GC
-      -XX:G1ReservePercent=25    -XX:InitiatingHeapOccupancyPercent=75      
+      -XX:G1ReservePercent=25
+      -XX:InitiatingHeapOccupancyPercent=75
+      
       # JVM temporary directory
       -Djava.io.tmpdir=${ES_TMPDIR}
       
