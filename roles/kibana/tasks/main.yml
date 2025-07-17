@@ -116,7 +116,7 @@
 
     - name: Set kibana_system_password fact from credentials file
       set_fact:
-        kibana_system_password: "{{ (edr_creds.content | b64decode).split('\n') | select('search', '^Kibana Password:') | list | first | regex_replace('^Kibana Password:\s*', '') }}"
+        kibana_system_password: "{{ (edr_creds.content | b64decode).split('\n') | select('search', '^Kibana Password:') | list | first | regex_replace('^Kibana Password:\\s*', '') }}"
 
 - name: Start and enable Kibana service
   block:
