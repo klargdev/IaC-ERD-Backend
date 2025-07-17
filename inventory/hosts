@@ -1,0 +1,2 @@
+[edr_backend]
+edr_server ansible_host=127.001sible_user=ansible-node ansible_connection=local 
