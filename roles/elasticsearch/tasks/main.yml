@@ -146,18 +146,24 @@
     state: started
     enabled: yes
   register: elasticsearch_start_result
-  failed_when: false
+
+- name: Verify Elasticsearch is actually running
+  systemd:
+    name: elasticsearch
+    state: started
+  register: elasticsearch_status_check
+  failed_when: elasticsearch_status_check.status.ActiveState != "active"
 
 - name: Check Elasticsearch status if startup failed
   shell: systemctl status elasticsearch
   register: elasticsearch_status_output
-  when: elasticsearch_start_result is failed
+  when: elasticsearch_status_check is failed
   failed_when: false
 
 - name: Display Elasticsearch status if failed
   debug:
     msg: "{{ elasticsearch_status_output.stdout_lines }}"
-  when: elasticsearch_start_result is failed
+  when: elasticsearch_status_check is failed
 
 - name: Check Elasticsearch logs if startup failed
   shell: |
@@ -169,13 +175,13 @@
       echo 'No Elasticsearch log file found.'
     fi
   register: elasticsearch_logs_output
-  when: elasticsearch_start_result is failed
+  when: elasticsearch_status_check is failed
   failed_when: false
 
 - name: Display Elasticsearch logs if failed
   debug:
     msg: "{{ elasticsearch_logs_output.stdout_lines }}"
-  when: elasticsearch_start_result is failed
+  when: elasticsearch_status_check is failed
 
 - name: Fail with clear error message if startup failed
   fail:
@@ -183,7 +189,7 @@
       Elasticsearch failed to start. Check the logs above for the specific error.
       Common causes: config file errors, missing Java, missing log4j2.properties, permissions, or missing dependencies.
       See the README for troubleshooting steps.
-  when: elasticsearch_start_result is failed
+  when: elasticsearch_status_check is failed
 
 - name: Wait for Elasticsearch to be ready (only if startup succeeded)
   uri:
@@ -196,18 +202,7 @@
   retries: 30
   delay: 10
   ignore_errors: yes
-  when: elasticsearch_start_result is not failed
-
-- name: Verify Elasticsearch is running
-  systemd:
-    name: elasticsearch
-    state: started
-  register: elasticsearch_status
-
-- name: Fail if Elasticsearch is not running
-  fail:
-    msg: "Elasticsearch failed to start. Check logs with: sudo journalctl -xeu elasticsearch.service"
-  when: elasticsearch_status.status.ActiveState != "active"
+  when: elasticsearch_status_check is not failed
 
 - name: Check if elasticsearch-setup-passwords has already been run
   stat:
