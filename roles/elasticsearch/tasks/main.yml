@@ -140,6 +140,15 @@
     name: openjdk-17-jdk
     state: present
 
+- name: Fix Elasticsearch config directory permissions
+  file:
+    path: /etc/elasticsearch
+    state: directory
+    owner: root
+    group: elasticsearch
+    mode: 0775
+  become: yes
+
 - name: Start and enable service
   systemd:
     name: elasticsearch
