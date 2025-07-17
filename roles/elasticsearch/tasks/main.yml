@@ -107,13 +107,30 @@
   args:
     creates: /etc/elasticsearch/certs/elasticsearch.key
 
-- name: Generate Elasticsearch CSR
-  command: openssl req -new -key /etc/elasticsearch/certs/elasticsearch.key -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" -out /etc/elasticsearch/certs/elasticsearch.csr
+- name: Create OpenSSL config for SAN
+  template:
+    src: openssl-san.cnf.j2
+    dest: /etc/elasticsearch/certs/openssl-san.cnf
+    owner: root
+    group: elasticsearch
+    mode: '0644'
+
+- name: Generate Elasticsearch CSR with SAN
+  command: >
+    openssl req -new -key /etc/elasticsearch/certs/elasticsearch.key \
+      -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" \
+      -out /etc/elasticsearch/certs/elasticsearch.csr \
+      -config /etc/elasticsearch/certs/openssl-san.cnf
   args:
     creates: /etc/elasticsearch/certs/elasticsearch.csr
 
-- name: Sign Elasticsearch certificate with CA
-  command: openssl x509 -req -in /etc/elasticsearch/certs/elasticsearch.csr -CA /etc/elasticsearch/certs/ca.crt -CAkey /etc/elasticsearch/certs/ca.key -CAcreateserial -out /etc/elasticsearch/certs/elasticsearch.crt -days 365 -sha256
+- name: Sign Elasticsearch certificate with CA and SAN
+  command: >
+    openssl x509 -req -in /etc/elasticsearch/certs/elasticsearch.csr \
+      -CA /etc/elasticsearch/certs/ca.crt -CAkey /etc/elasticsearch/certs/ca.key \
+      -CAcreateserial -out /etc/elasticsearch/certs/elasticsearch.crt \
+      -days 365 -sha256 \
+      -extensions req_ext -extfile /etc/elasticsearch/certs/openssl-san.cnf
   args:
     creates: /etc/elasticsearch/certs/elasticsearch.crt
 
