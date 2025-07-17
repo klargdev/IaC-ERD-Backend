@@ -58,7 +58,7 @@
 
 - name: Ensure Elasticsearch log directory exists and is writable
   file:
-    path: /usr/share/elasticsearch/logs
+    path: /var/log/elasticsearch
     state: directory
     owner: elasticsearch
     group: elasticsearch
