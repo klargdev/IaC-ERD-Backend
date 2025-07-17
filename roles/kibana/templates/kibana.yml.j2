@@ -21,4 +21,4 @@ logging.loggers:
     appenders: [console]
 
 xpack.security.encryptionKey: "{{ 'changeme' | password_hash('sha512') }}"
-xpack.encryptedSavedObjects.encryptionKey: "{{ 'changeme' | password_hash('sha512')[:32] }}" 
+xpack.encryptedSavedObjects.encryptionKey: "{{ ('changeme' | password_hash('sha512')) | truncate(32, True, '') }}" 
