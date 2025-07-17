@@ -43,6 +43,23 @@ This will:
 - Credentials are printed at the end of the playbook and saved to `/etc/elasticsearch/edr-credentials.txt`.
 - To reset credentials, re-run the playbook or use the provided script.
 
+## Resetting the Elasticsearch Password Manually
+If you need to manually reset the password for the `elastic` user (or any built-in user), you can use the `elasticsearch-reset-password` tool. This can be helpful if you lose access or want to set a new password without redeploying.
+
+**Usage:**
+```bash
+sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b -i --force
+```
+- `-u` specifies the username (e.g., `-u elastic`).
+- `-b` runs in batch mode (no interactive prompts).
+- `-i` prompts for the new password (or you can provide it via script).
+- `--force` forces the reset even if the password is already set.
+
+> **Note:** You can use any built-in username with the `-u` option, not just `elastic`.
+> Run this command on the server where Elasticsearch is installed, with root or sudo privileges. You do not need to be in a specific directory, just provide the full path to the tool.
+
+Alternatively, you can use the `generate-edr-credentials.sh` script provided in this repository, which will reset both the `elastic` and `kibana_system` user passwords and save them to `/etc/elasticsearch/edr-credentials.txt`.
+
 ## Troubleshooting
 - **If Elasticsearch fails to start:**
   - Run the cleanup playbook, then redeploy.

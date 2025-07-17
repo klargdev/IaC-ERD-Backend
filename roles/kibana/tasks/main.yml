@@ -99,6 +99,25 @@
   delay: 10
   ignore_errors: yes
 
+- name: Generate and synchronize credentials for elastic and kibana_system
+  block:
+    - name: Run credential generation script
+      command: bash {{ playbook_dir }}/generate-edr-credentials.sh
+      args:
+        creates: /etc/elasticsearch/edr-credentials.txt
+      register: cred_script
+      become: yes
+
+    - name: Read kibana_system password from credentials file
+      slurp:
+        src: /etc/elasticsearch/edr-credentials.txt
+      register: edr_creds
+      become: yes
+
+    - name: Set kibana_system_password fact from credentials file
+      set_fact:
+        kibana_system_password: "{{ (edr_creds.content | b64decode).split('\n') | select('search', '^Kibana Password:') | list | first | regex_replace('^Kibana Password:\s*', '') }}"
+
 - name: Start and enable Kibana service
   block:
     - name: Stop Kibana if running
@@ -161,3 +180,15 @@
     - name: Fail with detailed message
       fail:
         msg: "Kibana failed to start after multiple attempts. See debug output above." 
+
+- name: Print credentials location and reminder
+  debug:
+    msg: |
+      ✅ All services deployed!
+      
+      Your credentials for Elasticsearch and Kibana have been saved to:
+        /etc/elasticsearch/edr-credentials.txt
+      
+      Please check this file for your login details.
+      
+      If you need to reset credentials, re-run the playbook or use the generate-edr-credentials.sh script. 
