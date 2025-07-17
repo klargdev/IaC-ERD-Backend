@@ -1,10 +1,24 @@
-server.port: {{ kibana_port | default(5601) }}
 server.host: "0.0.0.0"
+server.port: 5601
 elasticsearch.hosts: ["https://localhost:9200"]
-elasticsearch.username: "elastic"
-elasticsearch.password: "{{ elastic_password }}"
+elasticsearch.username: "kibana_system"
+elasticsearch.password: "{{ kibana_system_password | default('changeit') }}"
+elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
+elasticsearch.ssl.verificationMode: "certificate"
+
 server.ssl.enabled: true
 server.ssl.certificate: /etc/kibana/certs/kibana.crt
 server.ssl.key: /etc/kibana/certs/kibana.key
-elasticsearch.ssl.certificateAuthorities: [ "/etc/kibana/certs/ca.crt" ]
-elasticsearch.ssl.verificationMode: certificate 
+
+logging.appenders:
+  console:
+    type: console
+    layout:
+      type: json
+logging.loggers:
+  - name: root
+    level: info
+    appenders: [console]
+
+xpack.security.encryptionKey: "{{ 'changeme' | password_hash('sha512') }}"
+xpack.encryptedSavedObjects.encryptionKey: "{{ 'changeme' | password_hash('sha512')[:32] }}" 

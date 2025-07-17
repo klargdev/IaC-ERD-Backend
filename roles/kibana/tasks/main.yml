@@ -5,13 +5,17 @@
     state: present
     update_cache: yes
 
-- name: Create certs directory
+- name: Create Kibana directories
   file:
-    path: /etc/kibana/certs
+    path: "{{ item.path }}"
     state: directory
-    owner: root
-    group: kibana
-    mode: 0750
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/etc/kibana/certs", owner: "root", group: "kibana", mode: "0750" }
+    - { path: "/var/log/kibana", owner: "kibana", group: "kibana", mode: "0755" }
+    - { path: "/usr/share/kibana/data", owner: "kibana", group: "kibana", mode: "0755" }
 
 - name: Copy CA cert from Elasticsearch
   copy:
@@ -22,32 +26,56 @@
     group: kibana
     mode: 0644
 
-- name: Generate Kibana private key
-  command: openssl genrsa -out /etc/kibana/certs/kibana.key 4096
-  args:
-    creates: /etc/kibana/certs/kibana.key
+- name: Generate Kibana SSL certificates
+  block:
+    - name: Generate Kibana private key
+      command: openssl genrsa -out /etc/kibana/certs/kibana.key 4096
+      args:
+        creates: /etc/kibana/certs/kibana.key
 
-- name: Generate Kibana CSR
-  command: openssl req -new -key /etc/kibana/certs/kibana.key -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" -out /etc/kibana/certs/kibana.csr
-  args:
-    creates: /etc/kibana/certs/kibana.csr
+    - name: Generate Kibana CSR
+      command: openssl req -new -key /etc/kibana/certs/kibana.key -subj "/CN={{ ansible_fqdn | default(ansible_hostname) }}" -out /etc/kibana/certs/kibana.csr
+      args:
+        creates: /etc/kibana/certs/kibana.csr
 
-- name: Sign Kibana certificate with CA
-  command: openssl x509 -req -in /etc/kibana/certs/kibana.csr -CA /etc/kibana/certs/ca.crt -CAkey /etc/elasticsearch/certs/ca.key -CAcreateserial -out /etc/kibana/certs/kibana.crt -days 365 -sha256
-  args:
-    creates: /etc/kibana/certs/kibana.crt
+    - name: Sign Kibana certificate with CA
+      command: >
+        openssl x509 -req -in /etc/kibana/certs/kibana.csr \
+        -CA /etc/kibana/certs/ca.crt \
+        -CAkey /etc/elasticsearch/certs/ca.key \
+        -CAcreateserial \
+        -out /etc/kibana/certs/kibana.crt \
+        -days 365 -sha256
+      args:
+        creates: /etc/kibana/certs/kibana.crt
 
-- name: Set permissions on certs
-  file:
-    path: /etc/kibana/certs
-    owner: root
-    group: kibana
-    mode: 0750
-    recurse: yes
+    - name: Create PKCS12 keystore for Kibana
+      command: >
+        openssl pkcs12 -export \
+        -in /etc/kibana/certs/kibana.crt \
+        -inkey /etc/kibana/certs/kibana.key \
+        -out /etc/kibana/certs/kibana.p12 \
+        -passout pass:changeit
+      args:
+        creates: /etc/kibana/certs/kibana.p12
 
-- name: Set elastic password for Kibana
-  set_fact:
-    elastic_password: "{{ hostvars[inventory_hostname].elastic_auto_password | default('') }}"
+    - name: Set certificate permissions
+      file:
+        path: /etc/kibana/certs
+        owner: root
+        group: kibana
+        mode: 0750
+        recurse: yes
+  rescue:
+    - name: Clean up failed certificate generation
+      file:
+        path: /etc/kibana/certs
+        state: absent
+      ignore_errors: yes
+
+    - name: Fail with certificate error
+      fail:
+        msg: "Failed to generate SSL certificates for Kibana. Check if openssl is properly installed."
 
 - name: Configure Kibana
   template:
@@ -58,50 +86,78 @@
     mode: 0660
   notify: restart kibana
 
-- name: Ensure curl is installed
-  apt:
-    name: curl
-    state: present
+- name: Ensure Kibana can connect to Elasticsearch
+  uri:
+    url: "https://localhost:9200"
+    method: GET
+    validate_certs: no
+    status_code: 200
+    timeout: 30
+  register: es_check
+  until: es_check.status == 200
+  retries: 12
+  delay: 10
+  ignore_errors: yes
 
-- name: Start and enable service
-  systemd:
-    name: kibana
-    state: started
-    enabled: yes
-  register: kibana_start_result
-  failed_when: false
+- name: Start and enable Kibana service
+  block:
+    - name: Stop Kibana if running
+      systemd:
+        name: kibana
+        state: stopped
+      ignore_errors: yes
 
-- name: Check Kibana status if startup failed
-  shell: systemctl status kibana
-  register: kibana_status_output
-  when: kibana_start_result is failed
-  failed_when: false
+    - name: Reload systemd
+      command: systemctl daemon-reload
 
-- name: Display Kibana status if failed
-  debug:
-    msg: "{{ kibana_status_output.stdout_lines }}"
-  when: kibana_start_result is failed
+    - name: Start and enable Kibana
+      systemd:
+        name: kibana
+        state: started
+        enabled: yes
+      register: kibana_start
+      retries: 3
+      delay: 10
 
-- name: Check Kibana logs if startup failed
-  shell: |
-    if [ -f /var/log/kibana/kibana.log ]; then
-      tail -50 /var/log/kibana/kibana.log
-    else
-      echo 'No Kibana log file found.'
-    fi
-  register: kibana_logs_output
-  when: kibana_start_result is failed
-  failed_when: false
+    - name: Wait for Kibana to be ready
+      uri:
+        url: "http://localhost:5601/api/status"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: kibana_health
+      until: kibana_health.status == 200
+      retries: 12
+      delay: 10
+      ignore_errors: yes
 
-- name: Display Kibana logs if failed
-  debug:
-    msg: "{{ kibana_logs_output.stdout_lines }}"
-  when: kibana_start_result is failed
+  rescue:
+    - name: Collect service status
+      command: systemctl status kibana --no-pager
+      register: kibana_status
+      changed_when: false
 
-- name: Fail with clear error message
-  fail:
-    msg: |
-      Kibana failed to start. Check the logs above for the specific error.
-      Common causes: config file errors, missing dependencies, permissions, or Elasticsearch not running.
-      See the README for troubleshooting steps.
-  when: kibana_start_result is failed 
+    - name: Collect service logs
+      command: journalctl -u kibana -n 50 --no-pager
+      register: kibana_logs
+      changed_when: false
+
+    - name: Display error information
+      debug:
+        msg: |
+          Kibana failed to start!
+          Status:
+          {{ kibana_status.stdout }}
+          
+          Last logs:
+          {{ kibana_logs.stdout }}
+
+          Common fixes:
+          1. Verify Elasticsearch is running: curl -k https://localhost:9200
+          2. Check /etc/kibana/kibana.yml configuration
+          3. Verify certificates in /etc/kibana/certs
+          4. Check disk space (df -h) and memory (free -h)
+
+    - name: Fail with detailed message
+      fail:
+        msg: "Kibana failed to start after multiple attempts. See debug output above." 
