@@ -1,8 +1,23 @@
 ---
+- name: Verify system requirements
+  assert:
+    that:
+      - ansible_memtotal_mb > 2000
+      - ansible_processor_vcpus > 1
+    msg: "System doesn't meet minimum requirements (2GB RAM, 2 CPUs)"
+
 - name: Install prerequisites
   apt:
     name: [openjdk-17-jdk, apt-transport-https, openssl]
     state: present
+    update_cache: yes
+
+- name: Configure system limits
+  sysctl:
+    name: vm.max_map_count
+    value: '262144'
+    state: present
+    reload: yes
 
 - name: Ensure keyrings directory exists
   file:
@@ -33,7 +48,21 @@
     state: present
     update_cache: yes
 
-- name: Ensure log4j2.properties exists
+- name: Create essential directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "/etc/elasticsearch", owner: "root", group: "elasticsearch", mode: "0775" }
+    - { path: "/etc/elasticsearch/certs", owner: "root", group: "elasticsearch", mode: "0750" }
+    - { path: "/var/log/elasticsearch", owner: "elasticsearch", group: "elasticsearch", mode: "0755" }
+    - { path: "/var/lib/elasticsearch", owner: "elasticsearch", group: "elasticsearch", mode: "0755" }
+    - { path: "/tmp/elasticsearch", owner: "elasticsearch", group: "elasticsearch", mode: "1777" }
+
+- name: Configure log4j2
   copy:
     dest: /etc/elasticsearch/log4j2.properties
     content: |
@@ -48,100 +77,20 @@
     group: elasticsearch
     mode: '0660'
 
-- name: Ensure jvm.options exists
+- name: Configure JVM options
   copy:
     dest: /etc/elasticsearch/jvm.options
     content: |
-      ################################################################
-      ## IMPORTANT: JVM heap size
-      ################################################################
-      
-      # Xms represents the initial size of total heap space
-      # Xmx represents the maximum size of total heap space
-      
       -Xms1g
       -Xmx1g
-      
-      ################################################################
-      ## Expert settings
-      ################################################################
-      
-      # Make sure that the JVM is run with the server VM
-      -server
-      
-      # Use G1GC (modern garbage collector for Java 17+)
       -XX:+UseG1GC
-      -XX:G1ReservePercent=25
-      -XX:InitiatingHeapOccupancyPercent=75
-      -XX:MaxGCPauseMillis=200
-      
-      # JVM temporary directory
-      -Djava.io.tmpdir=${ES_TMPDIR}
-      
-      # heap dumps
-      
-      # generate a heap dump when an allocation from the Java heap fails
-      # heap dumps are created in the working directory of the JVM
+      -XX:MaxGCPauseMillis=50
       -XX:+HeapDumpOnOutOfMemoryError
-      
-      # specify an alternative path for heap dumps; ensure the directory exists
-      # and has sufficient permissions
-      -XX:HeapDumpPath=data
-      
-      # specify an alternative path for JVM fatal error logs
-      -XX:ErrorFile=logs/hs_err_pid%p.log
-      
-      # Disable MLOCK
-      -XX:+UnlockDiagnosticVMOptions
-      -XX:+DebugNonSafepoints
+      -XX:HeapDumpPath=/var/lib/elasticsearch
+      -XX:ErrorFile=/var/log/elasticsearch/hs_err_pid%p.log
     owner: root
     group: elasticsearch
     mode: '0660'
-
-- name: Create certs directory
-  file:
-    path: /etc/elasticsearch/certs
-    state: directory
-    owner: root
-    group: elasticsearch
-    mode: 0750
-
-- name: Ensure Elasticsearch log directory exists and is writable
-  file:
-    path: /var/log/elasticsearch
-    state: directory
-    owner: elasticsearch
-    group: elasticsearch
-    mode: 0755
-
-- name: Ensure Elasticsearch data directory exists and is writable
-  file:
-    path: /var/lib/elasticsearch
-    state: directory
-    owner: elasticsearch
-    group: elasticsearch
-    mode: 0755
-
-- name: Ensure Elasticsearch temp directory exists and is writable
-  file:
-    path: /tmp/elasticsearch
-    state: directory
-    owner: elasticsearch
-    group: elasticsearch
-    mode: 0755
-
-- name: Ensure Elasticsearch user can write to /tmp
-  file:
-    path: /tmp
-    state: directory
-    mode: 01777
-    recurse: no
-
-- name: Stop Elasticsearch if running (to apply config changes)
-  systemd:
-    name: elasticsearch
-    state: stopped
-  ignore_errors: yes
 
 - name: Generate CA private key
   command: openssl genrsa -out /etc/elasticsearch/certs/ca.key 4096
@@ -182,150 +131,51 @@
     dest: /etc/elasticsearch/elasticsearch.yml
     owner: root
     group: elasticsearch
-    mode: 0660
+    mode: '0660'
   notify: restart elasticsearch
 
-- name: Ensure Java is installed
-  apt:
-    name: openjdk-17-jdk
-    state: present
-
-- name: Fix Elasticsearch config directory permissions
-  file:
-    path: /etc/elasticsearch
-    state: directory
-    owner: root
-    group: elasticsearch
-    mode: 0775
-  become: yes
-
-- name: Start and enable service
+- name: Start Elasticsearch service
   systemd:
     name: elasticsearch
     state: started
     enabled: yes
-  register: elasticsearch_start_result
+  register: es_start
+  retries: 3
+  delay: 10
 
-- name: Verify Elasticsearch is actually running
-  systemd:
-    name: elasticsearch
-    state: started
-  register: elasticsearch_status_check
-  failed_when: elasticsearch_status_check.status.ActiveState != "active"
-
-- name: Check Elasticsearch status if startup failed
-  shell: systemctl status elasticsearch
-  register: elasticsearch_status_output
-  when: elasticsearch_status_check is failed
-  failed_when: false
-
-- name: Display Elasticsearch status if failed
-  debug:
-    msg: "{{ elasticsearch_status_output.stdout_lines }}"
-  when: elasticsearch_status_check is failed
-
-- name: Check Elasticsearch logs if startup failed
-  shell: |
-    if [ -f /var/log/elasticsearch/elasticsearch.log ]; then
-      tail -50 /var/log/elasticsearch/elasticsearch.log
-    elif [ -f /var/log/elasticsearch/edr-production.log ]; then
-      tail -50 /var/log/elasticsearch/edr-production.log
-    else
-      echo 'No Elasticsearch log file found.'
-    fi
-  register: elasticsearch_logs_output
-  when: elasticsearch_status_check is failed
-  failed_when: false
-
-- name: Display Elasticsearch logs if failed
-  debug:
-    msg: "{{ elasticsearch_logs_output.stdout_lines }}"
-  when: elasticsearch_status_check is failed
-
-- name: Fail with clear error message if startup failed
-  fail:
-    msg: |
-      Elasticsearch failed to start. Check the logs above for the specific error.
-      Common causes: config file errors, missing Java, missing log4j2.properties, permissions, or missing dependencies.
-      See the README for troubleshooting steps.
-  when: elasticsearch_status_check is failed
-
-- name: Wait for Elasticsearch to be ready (only if startup succeeded)
-  uri:
-    url: "https://localhost:9200"
-    method: GET
-    validate_certs: no
-    status_code: 200
-  register: elasticsearch_health
-  until: elasticsearch_health.status == 200
-  retries: 30
+- name: Verify Elasticsearch is running
+  command: curl -s http://localhost:9200
+  register: es_verify
+  until: '"number" in es_verify.stdout'
+  retries: 12
   delay: 10
   ignore_errors: yes
-  when: elasticsearch_status_check is not failed
 
-- name: Check if elasticsearch-setup-passwords has already been run
-  stat:
-    path: /etc/elasticsearch/passwords_set.flag
-  register: passwords_flag
+- name: Set up passwords if needed
+  block:
+    - name: Check if passwords already set
+      stat:
+        path: /etc/elasticsearch/.passwords_set
+      register: passwords_set
 
-- name: Run elasticsearch-setup-passwords auto and capture output
-  command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
-  register: setup_passwords_output
-  changed_when: "'Changed password for user [elastic]' in setup_passwords_output.stdout"
-  when:
-    - elasticsearch_start_result is not failed
-    - not passwords_flag.stat.exists
-  ignore_errors: yes
+    - name: Run elasticsearch-setup-passwords
+      command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
+      when: not passwords_set.stat.exists
+      register: setup_passwords
+      changed_when: "Changed" in setup_passwords.stdout
 
-- name: Create flag file after password setup
-  file:
-    path: /etc/elasticsearch/passwords_set.flag
-    state: touch
-  when:
-    - elasticsearch_start_result is not failed
-    - setup_passwords_output is defined
-    - setup_passwords_output.rc == 0
-    - not passwords_flag.stat.exists
-
-- name: Extract elastic user password from setup-passwords output
-  set_fact:
-    elastic_auto_password: "{{ setup_passwords_output.stdout | regex_search('PASSWORD elastic = (.+)', '\\1') }}"
-  when:
-    - setup_passwords_output is defined
-    - setup_passwords_output.stdout is defined
-    - setup_passwords_output.rc == 0
-
-- name: Print Elasticsearch credentials (if just set)
-  debug:
-    msg: |
-      Elasticsearch is ready!
-      Username: elastic
-      Password: {{ elastic_auto_password | default('UNKNOWN - see setup-passwords output above') }}
-  when:
-    - elasticsearch_start_result is not failed
-    - setup_passwords_output is defined
-    - setup_passwords_output.rc == 0
-
-- name: Print message if passwords already set
-  debug:
-    msg: |
-      Elasticsearch passwords have already been set. If you need the elastic password, see your previous deployment output or reset manually.
-  when:
-    - passwords_flag.stat.exists
-    - (setup_passwords_output is not defined) or (setup_passwords_output.rc != 0) 
-
-- name: Save elastic credentials to file
-  copy:
-    dest: /etc/elasticsearch/elastic-credentials.txt
-    content: |
-      Username: elastic
-      Password: {{ elastic_auto_password | default('UNKNOWN - see setup-passwords output above') }}
-    owner: root
-    group: root
-    mode: '0600'
-  when:
-    - elastic_auto_password is defined
-    - elastic_auto_password != '' 
+    - name: Create password set flag
+      file:
+        path: /etc/elasticsearch/.passwords_set
+        state: touch
+        mode: '0640'
+        owner: root
+        group: elasticsearch
+      when: not passwords_set.stat.exists
+  rescue:
+    - name: Warn about password setup failure
+      debug:
+        msg: "Password setup failed. Run manually: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto"
 
 - name: Print final instructions for credentials
   debug:
@@ -343,61 +193,3 @@
         - TheHive:      https://localhost:9000
       
       For more help, see the README or contact your administrator. 
-
-- name: Ensure Elasticsearch config directory is writable
-  file:
-    path: /etc/elasticsearch
-    state: directory
-    owner: root
-    group: elasticsearch
-    mode: 0775 
-
-- name: Ensure jvm.options exists
-  copy:
-    dest: /etc/elasticsearch/jvm.options
-    content: |
-      ################################################################
-      ## IMPORTANT: JVM heap size
-      ################################################################
-      
-      # Xms represents the initial size of total heap space
-      # Xmx represents the maximum size of total heap space
-      
-      -Xms1g
-      -Xmx1g
-      
-      ################################################################
-      ## Expert settings
-      ################################################################
-      
-      # Make sure that the JVM is run with the server VM
-      -server
-      
-      # Use G1GC (modern garbage collector for Java 17+)
-      -XX:+UseG1GC
-      -XX:G1ReservePercent=25
-      -XX:InitiatingHeapOccupancyPercent=75
-      -XX:MaxGCPauseMillis=200
-      
-      # JVM temporary directory
-      -Djava.io.tmpdir=${ES_TMPDIR}
-      
-      # heap dumps
-      
-      # generate a heap dump when an allocation from the Java heap fails
-      # heap dumps are created in the working directory of the JVM
-      -XX:+HeapDumpOnOutOfMemoryError
-      
-      # specify an alternative path for heap dumps; ensure the directory exists
-      # and has sufficient permissions
-      -XX:HeapDumpPath=data
-      
-      # specify an alternative path for JVM fatal error logs
-      -XX:ErrorFile=logs/hs_err_pid%p.log
-      
-      # Disable MLOCK
-      -XX:+UnlockDiagnosticVMOptions
-      -XX:+DebugNonSafepoints
-    owner: root
-    group: elasticsearch
-    mode: '0660' 

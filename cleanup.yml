@@ -1,0 +1,40 @@
+---
+- name: Clean up broken Elasticsearch installation
+  hosts: edr_backend
+  become: true
+  tasks:
+    - name: Stop Elasticsearch if running
+      systemd:
+        name: elasticsearch
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove Elasticsearch packages
+      apt:
+        name: elasticsearch
+        state: absent
+        purge: yes
+        autoremove: yes
+
+    - name: Remove Elasticsearch directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/elasticsearch
+        - /var/lib/elasticsearch
+        - /var/log/elasticsearch
+        - /usr/share/elasticsearch
+      ignore_errors: yes
+
+    - name: Remove apt key
+      file:
+        path: /etc/apt/keyrings/elastic.gpg
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove repository
+      file:
+        path: /etc/apt/sources.list.d/elastic-8.x.list
+        state: absent
+      ignore_errors: yes 
