@@ -69,11 +69,9 @@
       # Make sure that the JVM is run with the server VM
       -server
       
-      # Disable explicit garbage collection
+      # Use G1GC (modern garbage collector for Java 17+)
       -XX:+UseG1GC
-      -XX:G1ReservePercent=25
-      -XX:InitiatingHeapOccupancyPercent=75
-      
+      -XX:G1ReservePercent=25    -XX:InitiatingHeapOccupancyPercent=75    -XX:MaxGCPauseMillis=200      
       # JVM temporary directory
       -Djava.io.tmpdir=${ES_TMPDIR}
       
@@ -89,11 +87,6 @@
       
       # specify an alternative path for JVM fatal error logs
       -XX:ErrorFile=logs/hs_err_pid%p.log
-      
-      # JDK 9 options
-      -XX:+UseConcMarkSweepGC
-      -XX:CMSInitiatingOccupancyFraction=75
-      -XX:+UseCMSInitiatingOccupancyOnly
       
       # Disable MLOCK
       -XX:+UnlockDiagnosticVMOptions
@@ -377,11 +370,9 @@
       # Make sure that the JVM is run with the server VM
       -server
       
-      # Disable explicit garbage collection
+      # Use G1GC (modern garbage collector for Java 17+)
       -XX:+UseG1GC
-      -XX:G1ReservePercent=25
-      -XX:InitiatingHeapOccupancyPercent=75
-      
+      -XX:G1ReservePercent=25    -XX:InitiatingHeapOccupancyPercent=75    -XX:MaxGCPauseMillis=200      
       # JVM temporary directory
       -Djava.io.tmpdir=${ES_TMPDIR}
       
@@ -397,11 +388,6 @@
       
       # specify an alternative path for JVM fatal error logs
       -XX:ErrorFile=logs/hs_err_pid%p.log
-      
-      # JDK 9 options
-      -XX:+UseConcMarkSweepGC
-      -XX:CMSInitiatingOccupancyFraction=75
-      -XX:+UseCMSInitiatingOccupancyOnly
       
       # Disable MLOCK
       -XX:+UnlockDiagnosticVMOptions
