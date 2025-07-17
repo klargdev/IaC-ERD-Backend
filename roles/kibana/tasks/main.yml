@@ -86,6 +86,15 @@
     mode: 0660
   notify: restart kibana
 
+- name: Reset elastic user password
+  command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic --batch
+  register: elastic_reset
+  become: yes
+
+- name: Extract elastic password from output
+  set_fact:
+    elastic_password: "{{ elastic_reset.stdout | regex_search('New value for password of user \\[elastic\\] is: (.+)', '\\1') }}"
+
 - name: Ensure Kibana can connect to Elasticsearch
   uri:
     url: "https://localhost:9200"
@@ -100,96 +109,11 @@
   delay: 10
   ignore_errors: yes
 
-- name: Generate and synchronize credentials for elastic and kibana_system
-  block:
-    - name: Run credential generation script
-      command: bash {{ playbook_dir }}/generate-edr-credentials.sh
-      args:
-        creates: /etc/elasticsearch/edr-credentials.txt
-      register: cred_script
-      become: yes
-
-    - name: Read kibana_system password from credentials file
-      slurp:
-        src: /etc/elasticsearch/edr-credentials.txt
-      register: edr_creds
-      become: yes
-
-    - name: Set kibana_system_password fact from credentials file
-      set_fact:
-        kibana_system_password: "{{ (edr_creds.content | b64decode).split('\n') | select('search', '^Kibana Password:') | list | first | regex_replace('^Kibana Password:\\s*', '') }}"
-
-- name: Start and enable Kibana service
-  block:
-    - name: Stop Kibana if running
-      systemd:
-        name: kibana
-        state: stopped
-      ignore_errors: yes
-
-    - name: Reload systemd
-      command: systemctl daemon-reload
-
-    - name: Start and enable Kibana
-      systemd:
-        name: kibana
-        state: started
-        enabled: yes
-      register: kibana_start
-      retries: 3
-      delay: 10
-
-    - name: Wait for Kibana to be ready
-      uri:
-        url: "http://localhost:5601/api/status"
-        method: GET
-        status_code: 200
-        timeout: 30
-      register: kibana_health
-      until: kibana_health.status == 200
-      retries: 12
-      delay: 10
-      ignore_errors: yes
-
-  rescue:
-    - name: Collect service status
-      command: systemctl status kibana --no-pager
-      register: kibana_status
-      changed_when: false
-
-    - name: Collect service logs
-      command: journalctl -u kibana -n 50 --no-pager
-      register: kibana_logs
-      changed_when: false
-
-    - name: Display error information
-      debug:
-        msg: |
-          Kibana failed to start!
-          Status:
-          {{ kibana_status.stdout }}
-          
-          Last logs:
-          {{ kibana_logs.stdout }}
-
-          Common fixes:
-          1. Verify Elasticsearch is running: curl -k https://localhost:9200
-          2. Check /etc/kibana/kibana.yml configuration
-          3. Verify certificates in /etc/kibana/certs
-          4. Check disk space (df -h) and memory (free -h)
-
-    - name: Fail with detailed message
-      fail:
-        msg: "Kibana failed to start after multiple attempts. See debug output above." 
-
-- name: Print credentials location and reminder
+- name: Show elastic password
   debug:
     msg: |
       ✅ All services deployed!
       
-      Your credentials for Elasticsearch and Kibana have been saved to:
-        /etc/elasticsearch/edr-credentials.txt
+      Your elastic user password is: {{ elastic_password }}
       
-      Please check this file for your login details.
-      
-      If you need to reset credentials, re-run the playbook or use the generate-edr-credentials.sh script. 
+      Please save this password securely. If you need to reset credentials, re-run the playbook. 
