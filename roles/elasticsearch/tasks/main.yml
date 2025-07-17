@@ -48,6 +48,58 @@
     group: elasticsearch
     mode: '0660'
 
+- name: Ensure jvm.options exists
+  copy:
+    dest: /etc/elasticsearch/jvm.options
+    content: |
+      ################################################################
+      ## IMPORTANT: JVM heap size
+      ################################################################
+      
+      # Xms represents the initial size of total heap space
+      # Xmx represents the maximum size of total heap space
+      
+      -Xms1g
+      -Xmx1g
+      
+      ################################################################
+      ## Expert settings
+      ################################################################
+      
+      # Make sure that the JVM is run with the server VM
+      -server
+      
+      # Disable explicit garbage collection
+      -XX:+UseG1GC
+      -XX:G1ReservePercent=25    -XX:InitiatingHeapOccupancyPercent=75      
+      # JVM temporary directory
+      -Djava.io.tmpdir=${ES_TMPDIR}
+      
+      # heap dumps
+      
+      # generate a heap dump when an allocation from the Java heap fails
+      # heap dumps are created in the working directory of the JVM
+      -XX:+HeapDumpOnOutOfMemoryError
+      
+      # specify an alternative path for heap dumps; ensure the directory exists
+      # and has sufficient permissions
+      -XX:HeapDumpPath=data
+      
+      # specify an alternative path for JVM fatal error logs
+      -XX:ErrorFile=logs/hs_err_pid%p.log
+      
+      # JDK9 options
+      -XX:+UseConcMarkSweepGC
+      -XX:CMSInitiatingOccupancyFraction=75
+      -XX:+UseCMSInitiatingOccupancyOnly
+      
+      # Disable MLOCK
+      -XX:+UnlockDiagnosticVMOptions
+      -XX:+DebugNonSafepoints
+    owner: root
+    group: elasticsearch
+    mode: '0660'
+
 - name: Create certs directory
   file:
     path: /etc/elasticsearch/certs
