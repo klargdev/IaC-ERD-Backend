@@ -162,7 +162,7 @@
       command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
       when: not passwords_set.stat.exists
       register: setup_passwords
-      changed_when: "Changed" in setup_passwords.stdout
+      changed_when: "'Changed' in setup_passwords.stdout"
 
     - name: Create password set flag
       file:
