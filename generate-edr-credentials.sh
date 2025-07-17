@@ -11,9 +11,13 @@ CRED_FILE="/etc/elasticsearch/edr-credentials.txt"
 # Function to reset elastic user password
 reset_elastic_password() {
   echo "[INFO] Resetting $ELASTIC_USER password..."
-  /usr/share/elasticsearch/bin/elasticsearch-reset-password -u $ELASTIC_USER -b -i --force <<EOF
+  if /usr/share/elasticsearch/bin/elasticsearch-reset-password --help | grep -q -- '--password'; then
+    /usr/share/elasticsearch/bin/elasticsearch-reset-password -u $ELASTIC_USER -b --password $ELASTIC_PASS --force
+  else
+    /usr/share/elasticsearch/bin/elasticsearch-reset-password -u $ELASTIC_USER -b -i --force <<EOF
 $ELASTIC_PASS
 EOF
+  fi
 }
 
 # Function to create or update kibana_system user
