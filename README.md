@@ -12,6 +12,8 @@ If your Elasticsearch installation is broken, or you want to start fresh, run th
 ansible-playbook -i inventory/hosts cleanup.yml --ask-become-pass
 ```
 
+**Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
+
 This will:
 - Stop Elasticsearch if running
 - Remove Elasticsearch packages, data, logs, and configuration
@@ -25,6 +27,8 @@ This will:
 ```bash
 ansible-playbook -i inventory/hosts site.yml --ask-become-pass
 ```
+
+**Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
 
 This will:
 - Install Java, Elasticsearch, Kibana, and TheHive
