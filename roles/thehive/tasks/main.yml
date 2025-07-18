@@ -109,13 +109,50 @@
     mode: 0660
   notify: restart thehive
 
-- name: Start and enable service
+- name: Reload systemd before starting TheHive
+  command: systemctl daemon-reload
+
+- name: Start and enable TheHive service
   systemd:
     name: thehive
     state: started
     enabled: yes
   register: thehive_start_result
   failed_when: false
+
+- name: Handle TheHive start failure
+  block:
+    - name: Stop TheHive if running (after failed start)
+      systemd:
+        name: thehive
+        state: stopped
+      ignore_errors: yes
+
+    - name: Reload systemd again
+      command: systemctl daemon-reload
+
+    - name: Start TheHive after failed start
+      systemd:
+        name: thehive
+        state: started
+        enabled: yes
+      register: thehive_start_after_fail
+      retries: 3
+      delay: 10
+  when: thehive_start_result is failed
+
+- name: Debug TheHive service status if still failing
+  command: systemctl status thehive --no-pager
+  register: thehive_status_final
+  changed_when: false
+  failed_when: false
+
+- name: Show TheHive service status if failed
+  debug:
+    msg: |
+      TheHive service status after start attempts:
+      {{ thehive_status_final.stdout }}
+  when: thehive_start_result is failed
 
 - name: Check TheHive status if startup failed
   shell: systemctl status thehive
