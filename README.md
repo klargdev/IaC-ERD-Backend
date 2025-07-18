@@ -30,25 +30,28 @@ ansible-playbook -i inventory/hosts site.yml --ask-become-pass
 
 **Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
 
-### During Deployment - Password Setup
-The playbook will prompt you for the Elasticsearch password at the beginning, then pause during deployment to allow you to manually set the password:
+### Password and Authentication Flow
 
-1. **Enter a password** when prompted at the start of the playbook (this will be used for Kibana configuration)
-2. **The playbook will pause** and show you a command to run
-3. **Open a new terminal** and run the displayed command:
+1. **At the start of the playbook**, you will be prompted to enter a password for the `elastic` user. This password will:
+   - Be used to configure Kibana's connection to Elasticsearch
+   - Be the password you set for the `elastic` user in Elasticsearch
+
+2. **Kibana configuration**: The playbook automatically configures `/etc/kibana/kibana.yml` to use the `elastic` user and the password you entered.
+
+3. **Manual password reset**: During the playbook run, you will be prompted to manually reset the `elastic` password in Elasticsearch. You must use the **same password** you entered at the beginning when running:
    ```bash
    sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
    ```
-4. **Enter the same password** when prompted by the command (you'll need to type it twice)
-5. **Return to the Ansible terminal** and press Enter to continue the deployment
 
-This will:
-- Install Java, Elasticsearch, Kibana, and TheHive
-- Create all required directories and configuration files
-- Set correct permissions
-- Generate and configure self-signed TLS certificates
-- Configure Kibana to connect to Elasticsearch with your chosen password
-- Start all services and verify they are running
+4. **Automatic restarts**: The playbook will automatically restart Kibana after configuration changes and after the password reset, so the new settings take effect. No manual restart is needed.
+
+5. **Result**: Kibana will be able to connect to Elasticsearch using the password you provided, and you will see a summary at the end of the playbook.
+
+**Summary:**
+- Enter your desired password once at the beginning
+- Use the same password when resetting the `elastic` user password manually
+- The playbook handles all configuration and restarts automatically
+- No need to manually edit configuration files or restart services
 
 ## Password Setup and Credentials
 - The `elastic` user password is set manually during deployment for security

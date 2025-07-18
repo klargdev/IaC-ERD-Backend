@@ -98,6 +98,12 @@
       The playbook will wait for 2 minutes...
   timeout: 120
 
+- name: Restart Kibana to apply new password configuration
+  systemd:
+    name: kibana
+    state: restarted
+  notify: restart kibana
+
 - name: Ensure Kibana can connect to Elasticsearch
   uri:
     url: "https://localhost:9200"

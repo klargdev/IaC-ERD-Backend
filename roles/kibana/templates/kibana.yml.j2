@@ -1,8 +1,8 @@
 server.host: "0.0.0.0"
 server.port: 5601
 elasticsearch.hosts: ["https://localhost:9200"]
-elasticsearch.username: "kibana_system"
-elasticsearch.password: "{{ kibana_system_password | default('changeit') }}"
+elasticsearch.username: "elastic"
+elasticsearch.password: "{{ elastic_password }}"
 elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
 elasticsearch.ssl.verificationMode: "certificate"
 
