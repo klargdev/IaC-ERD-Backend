@@ -8,6 +8,11 @@
       prompt: "Enter the elastic user password (you'll be prompted to reset it during deployment):"
       private: yes
 
+  tasks:
+    - name: Debug elastic_password at playbook level
+      debug:
+        var: elastic_password
+
   roles:
     - elasticsearch
     - { role: kibana, elastic_password: "{{ elastic_password }}" }
