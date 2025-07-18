@@ -3,71 +3,88 @@
   hosts: edr_backend
   become: true
   gather_facts: true
-
   roles:
     - elasticsearch
     - kibana
-    - thehive 
+    - thehive
 
+- name: Deploy and configure BTWIN-SERVER (betweener)
+  hosts: btwin_server
+  become: true
+  gather_facts: true
+  vars_prompt:
+    - name: btwin_domain
+      prompt: "Enter the domain name for the betweener server (e.g., groffmen.store)"
+      private: no
+    - name: stack_address
+      prompt: "Enter the HTTP address of your Elastic Stack (e.g., http://localhost:9200)"
+      private: no
+  tasks:
+    - name: Ensure apt cache is updated
+      apt:
+        update_cache: yes
 
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
 
+    - name: Ensure Nginx is started and enabled
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
 
+    - name: Copy BTWIN-SERVER directory
+      copy:
+        src: BTWIN-SERVER/
+        dest: /srv/btwin-server/
+        owner: www-data
+        group: www-data
+        mode: 0755
 
+    - name: Template Filebeat Linux config
+      template:
+        src: /srv/btwin-server/configs/filebeat-linux.yml
+        dest: /srv/btwin-server/configs/filebeat-linux.yml
+        owner: www-data
+        group: www-data
+        mode: 0644
+      vars:
+        elastic_stack_url: "{{ stack_address }}"
 
+    - name: Template Filebeat Windows config
+      template:
+        src: /srv/btwin-server/configs/filebeat-windows.yml
+        dest: /srv/btwin-server/configs/filebeat-windows.yml
+        owner: www-data
+        group: www-data
+        mode: 0644
+      vars:
+        elastic_stack_url: "{{ stack_address }}"
 
+    - name: Configure Nginx for BTWIN-SERVER
+      template:
+        src: BTWIN-SERVER/nginx-btwin-server.conf.j2
+        dest: /etc/nginx/sites-available/btwin-server.conf
+      notify: Reload Nginx
 
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/btwin-server.conf
+        dest: /etc/nginx/sites-enabled/btwin-server.conf
+        state: link
+        force: yes
 
+    - name: Remove default Nginx site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+        force: yes
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
+        state: reloaded
     
