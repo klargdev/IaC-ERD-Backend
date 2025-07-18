@@ -77,6 +77,15 @@
       fail:
         msg: "Failed to generate SSL certificates for Kibana. Check if openssl is properly installed."
 
+- name: Debug elastic_password
+  debug:
+    var: elastic_password
+
+- name: Fail if elastic_password is not defined
+  fail:
+    msg: "The variable 'elastic_password' is not defined. Please run the playbook from site.yml and provide the password at the prompt."
+  when: elastic_password is not defined
+
 - name: Configure Kibana
   template:
     src: kibana.yml.j2
