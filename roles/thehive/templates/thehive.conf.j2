@@ -1,7 +1,8 @@
 play.http.secret.key = "{{ lookup('password', '/dev/null length=64 chars=ascii_letters') }}"
 cluster.name = "thehive"
-play.server.https.port = 9000
-play.server.https.keyStore.path = "/etc/thehive/certs/thehive.p12"
-play.server.https.keyStore.password = "thehivepass"
-play.server.https.keyStore.type = "PKCS12"
+# Disable SSL for TheHive (run in HTTP mode only)
+play.server.https.keyStore.path = ""
+play.server.https.keyStore.password = ""
+play.server.https.keyStore.type = ""
+http.port = 9000
 search.uri = "http://localhost:9200" 
