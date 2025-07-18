@@ -1,2 +1,5 @@
 [edr_backend]
+edr_server ansible_host=127.0.0.1 ansible_user=ansible-node ansible_connection=local
+
+[btwin_server]
 edr_server ansible_host=127.0.0.1 ansible_user=ansible-node ansible_connection=local 

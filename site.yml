@@ -12,10 +12,7 @@
   hosts: btwin_server
   become: true
   gather_facts: true
-  vars_prompt:
-    - name: btwin_domain
-      prompt: "Enter the domain name for the betweener server (e.g., groffmen.store)"
-      private: no
+  # Note: Edit BTWIN-SERVER/nginx-btwin-server.conf.j2 to add your domain before running
   vars:
     stack_address: "http://localhost:9200"
   tasks:
