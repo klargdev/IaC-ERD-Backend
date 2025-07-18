@@ -1,0 +1,11 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - C:\ProgramData\*.log
+
+output.elasticsearch:
+  hosts: ["{{ elastic_stack_url }}"]
+  fields:
+    hostname: "${COMPUTERNAME}"
+    os: "Windows" 

@@ -16,9 +16,8 @@
     - name: btwin_domain
       prompt: "Enter the domain name for the betweener server (e.g., groffmen.store)"
       private: no
-    - name: stack_address
-      prompt: "Enter the HTTP address of your Elastic Stack (e.g., http://localhost:9200)"
-      private: no
+  vars:
+    stack_address: "http://localhost:9200"
   tasks:
     - name: Ensure apt cache is updated
       apt:
