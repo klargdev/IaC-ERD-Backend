@@ -77,7 +77,7 @@
       fail:
         msg: "Failed to generate SSL certificates for Kibana. Check if openssl is properly installed."
 
-- name: Debug elastic_password
+- name: Debug elastic_password before template
   debug:
     var: elastic_password
 
