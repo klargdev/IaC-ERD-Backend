@@ -168,32 +168,6 @@
   delay: 10
   ignore_errors: yes
 
-- name: Set up passwords if needed
-  block:
-    - name: Check if passwords already set
-      stat:
-        path: /etc/elasticsearch/.passwords_set
-      register: passwords_set
-
-    - name: Run elasticsearch-setup-passwords
-      command: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto -b
-      when: not passwords_set.stat.exists
-      register: setup_passwords
-      changed_when: "'Changed' in setup_passwords.stdout"
-
-    - name: Create password set flag
-      file:
-        path: /etc/elasticsearch/.passwords_set
-        state: touch
-        mode: '0640'
-        owner: root
-        group: elasticsearch
-      when: not passwords_set.stat.exists
-  rescue:
-    - name: Warn about password setup failure
-      debug:
-        msg: "Password setup failed. Run manually: /usr/share/elasticsearch/bin/elasticsearch-setup-passwords auto"
-
 - name: Print final instructions for credentials
   debug:
     msg: |

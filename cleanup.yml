@@ -1,8 +1,9 @@
 ---
-- name: Clean up broken Elasticsearch installation
+- name: Clean up broken Elasticsearch, Kibana, and TheHive installation
   hosts: edr_backend
   become: true
   tasks:
+    # Elasticsearch cleanup
     - name: Stop Elasticsearch if running
       systemd:
         name: elasticsearch
@@ -37,4 +38,55 @@
       file:
         path: /etc/apt/sources.list.d/elastic-8.x.list
         state: absent
+      ignore_errors: yes
+
+    # Kibana cleanup
+    - name: Stop Kibana if running
+      systemd:
+        name: kibana
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove Kibana package
+      apt:
+        name: kibana
+        state: absent
+        purge: yes
+        autoremove: yes
+      ignore_errors: yes
+
+    - name: Remove Kibana directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kibana
+        - /var/log/kibana
+        - /usr/share/kibana
+      ignore_errors: yes
+
+    # TheHive cleanup
+    - name: Stop TheHive if running
+      systemd:
+        name: thehive
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove TheHive package
+      apt:
+        name: thehive
+        state: absent
+        purge: yes
+        autoremove: yes
+      ignore_errors: yes
+
+    - name: Remove TheHive directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/thehive
+        - /var/log/thehive
+        - /usr/share/thehive
+        - /var/lib/thehive
       ignore_errors: yes 
