@@ -86,14 +86,23 @@
     mode: 0660
   notify: restart kibana
 
-- name: Reset elastic user password
-  command: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic --batch
-  register: elastic_reset
-  become: yes
+- name: Pause for manual password reset
+  pause:
+    prompt: |
+      ⏰ Please run the following command manually:
+      
+      sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+      
+      Copy the generated password, then press Enter to continue.
+      
+      The playbook will wait for 2 minutes...
+  timeout: 120
 
-- name: Extract elastic password from output
-  set_fact:
-    elastic_password: "{{ elastic_reset.stdout | regex_search('New value for password of user \\[elastic\\] is: (.+)', '\\1') }}"
+- name: Prompt user for password
+  vars_prompt:
+    - name: elastic_password
+      prompt: "Enter the elastic user password you just generated:"
+      private: yes
 
 - name: Ensure Kibana can connect to Elasticsearch
   uri:
@@ -108,6 +117,69 @@
   retries: 12
   delay: 10
   ignore_errors: yes
+
+- name: Start and enable Kibana service
+  block:
+    - name: Stop Kibana if running
+      systemd:
+        name: kibana
+        state: stopped
+      ignore_errors: yes
+
+    - name: Reload systemd
+      command: systemctl daemon-reload
+
+    - name: Start and enable Kibana
+      systemd:
+        name: kibana
+        state: started
+        enabled: yes
+      register: kibana_start
+      retries: 3
+      delay: 10
+
+    - name: Wait for Kibana to be ready
+      uri:
+        url: "http://localhost:5601/api/status"
+        method: GET
+        status_code: 200
+        timeout: 30
+      register: kibana_health
+      until: kibana_health.status == 200
+      retries: 12
+      delay: 10
+      ignore_errors: yes
+
+  rescue:
+    - name: Collect service status
+      command: systemctl status kibana --no-pager
+      register: kibana_status
+      changed_when: false
+
+    - name: Collect service logs
+      command: journalctl -u kibana -n 50 --no-pager
+      register: kibana_logs
+      changed_when: false
+
+    - name: Display error information
+      debug:
+        msg: |
+          Kibana failed to start!
+          Status:
+          {{ kibana_status.stdout }}
+          
+          Last logs:
+          {{ kibana_logs.stdout }}
+
+          Common fixes:
+          1. Verify Elasticsearch is running: curl -k https://localhost:9200
+          2. Check /etc/kibana/kibana.yml configuration
+          3. Verify certificates in /etc/kibana/certs
+          4. Check disk space (df -h) and memory (free -h)
+
+    - name: Fail with detailed message
+      fail:
+        msg: "Kibana failed to start after multiple attempts. See debug output above." 
 
 - name: Show elastic password
   debug:
