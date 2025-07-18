@@ -86,11 +86,50 @@
     mode: 0660
   notify: restart kibana
 
+- name: Reload systemd before restarting Kibana
+  command: systemctl daemon-reload
+
 - name: Restart Kibana to apply new configuration
   systemd:
     name: kibana
     state: restarted
+  register: kibana_restart
+  failed_when: false
   notify: restart kibana
+
+- name: Handle Kibana restart failure
+  block:
+    - name: Stop Kibana if running (after failed restart)
+      systemd:
+        name: kibana
+        state: stopped
+      ignore_errors: yes
+
+    - name: Reload systemd again
+      command: systemctl daemon-reload
+
+    - name: Start Kibana after failed restart
+      systemd:
+        name: kibana
+        state: started
+        enabled: yes
+      register: kibana_start_after_fail
+      retries: 3
+      delay: 10
+  when: kibana_restart is failed
+
+- name: Debug Kibana service status if still failing
+  command: systemctl status kibana --no-pager
+  register: kibana_status_final
+  changed_when: false
+  failed_when: false
+
+- name: Show Kibana service status if failed
+  debug:
+    msg: |
+      Kibana service status after restart attempts:
+      {{ kibana_status_final.stdout }}
+  when: kibana_restart is failed
 
 - name: Start and enable Kibana service
   block:
