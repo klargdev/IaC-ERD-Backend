@@ -31,17 +31,16 @@ ansible-playbook -i inventory/hosts site.yml --ask-become-pass
 **Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
 
 ### During Deployment - Password Setup
-The playbook will pause during deployment to allow you to manually set the Elasticsearch password:
+The playbook will prompt you for the Elasticsearch password at the beginning, then pause during deployment to allow you to manually set the password:
 
-1. **The playbook will pause** and show you a command to run
-2. **Open a new terminal** and run the displayed command:
+1. **Enter a password** when prompted at the start of the playbook (this will be used for Kibana configuration)
+2. **The playbook will pause** and show you a command to run
+3. **Open a new terminal** and run the displayed command:
    ```bash
    sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
    ```
-3. **Enter a new password** when prompted by the command (you'll need to type it twice)
-4. **Copy the generated password** and return to the Ansible terminal
-5. **Enter the password** when Ansible prompts you (it will be hidden for security)
-6. **Press Enter** to continue the deployment
+4. **Enter the same password** when prompted by the command (you'll need to type it twice)
+5. **Return to the Ansible terminal** and press Enter to continue the deployment
 
 This will:
 - Install Java, Elasticsearch, Kibana, and TheHive

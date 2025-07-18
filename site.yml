@@ -3,10 +3,14 @@
   hosts: edr_backend
   become: true
   gather_facts: true
+  vars_prompt:
+    - name: elastic_password
+      prompt: "Enter the elastic user password (you'll be prompted to reset it during deployment):"
+      private: yes
 
   roles:
     - elasticsearch
-    - kibana
+    - { role: kibana, elastic_password: "{{ elastic_password }}" }
     - thehive 
 
 
