@@ -6,12 +6,11 @@ network.host: 0.0.0.0
 http.port: 9200
 discovery.type: single-node
 xpack.security.enabled: false
-
-# HTTP SSL Configuration
-xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.key: /etc/elasticsearch/certs/elasticsearch.key
-xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/elasticsearch.crt
-xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
+xpack.security.http.ssl.enabled: false
+# SSL is disabled for open development setup
+#xpack.security.http.ssl.key: /etc/elasticsearch/certs/elasticsearch.key
+#xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/elasticsearch.crt
+#xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
 
 # Transport SSL Configuration (disabled for single-node)
 xpack.security.transport.ssl.enabled: false 

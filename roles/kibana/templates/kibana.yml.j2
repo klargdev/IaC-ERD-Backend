@@ -1,9 +1,7 @@
 server.host: "0.0.0.0"
 server.port: 5601
-elasticsearch.hosts: ["https://localhost:9200"]
-# No authentication required
-elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
-elasticsearch.ssl.verificationMode: "certificate"
+elasticsearch.hosts: ["http://localhost:9200"]
+# No authentication or SSL required
 
 server.ssl.enabled: true
 server.ssl.certificate: /etc/kibana/certs/kibana.crt

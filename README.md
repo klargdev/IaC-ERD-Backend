@@ -1,5 +1,7 @@
 # EDR Backend Stack Deployment (Ansible)
 
+> **Note:** This stack is open by default (no authentication or passwords) and is intended for local development or testing only. **Do not use in production as-is!**
+
 ## System Requirements
 - **Minimum:** 2GB RAM, 2 CPUs
 - **OS:** Ubuntu (tested on 20.04/22.04)
@@ -36,18 +38,6 @@ This will:
 - Set correct permissions
 - Generate and configure self-signed TLS certificates
 - Start all services and verify they are running
-
-## Security and Authentication
-
-**Authentication between Kibana and Elasticsearch is now disabled.**
-- No password is required for accessing Elasticsearch or Kibana.
-- Kibana connects to Elasticsearch without authentication.
-- This setup is intended for local development or testing only.
-
-> **WARNING:**
-> This configuration disables all security and authentication for Elasticsearch and Kibana.
-> Anyone who can access your server can access all data and services without restriction.
-> **Do not use this configuration in production!**
 
 ## Troubleshooting
 - **If Elasticsearch, Kibana, or TheHive fails to start:**
