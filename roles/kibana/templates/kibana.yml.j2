@@ -1,11 +1,7 @@
-{% if elastic_password is not defined %}
-# ERROR: elastic_password variable is not defined! Please ensure you provide it at playbook start.
-{% endif %}
 server.host: "0.0.0.0"
 server.port: 5601
 elasticsearch.hosts: ["https://localhost:9200"]
-elasticsearch.username: "elastic"
-elasticsearch.password: "{{ elastic_password }}"
+# No authentication required
 elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/ca.crt"]
 elasticsearch.ssl.verificationMode: "certificate"
 
