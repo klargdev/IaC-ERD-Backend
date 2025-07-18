@@ -77,15 +77,6 @@
       fail:
         msg: "Failed to generate SSL certificates for Kibana. Check if openssl is properly installed."
 
-- name: Debug elastic_password before template
-  debug:
-    var: elastic_password
-
-- name: Fail if elastic_password is not defined
-  fail:
-    msg: "The variable 'elastic_password' is not defined. Please run the playbook from site.yml and provide the password at the prompt."
-  when: elastic_password is not defined
-
 - name: Configure Kibana
   template:
     src: kibana.yml.j2
@@ -95,37 +86,11 @@
     mode: 0660
   notify: restart kibana
 
-- name: Pause for manual password reset
-  pause:
-    prompt: |
-      ⏰ Please run the following command manually:
-      
-      sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
-      
-      Copy the generated password, then press Enter to continue.
-      
-      The playbook will wait for 2 minutes...
-  timeout: 120
-
-- name: Restart Kibana to apply new password configuration
+- name: Restart Kibana to apply new configuration
   systemd:
     name: kibana
     state: restarted
   notify: restart kibana
-
-- name: Ensure Kibana can connect to Elasticsearch
-  uri:
-    url: "https://localhost:9200"
-    method: GET
-    validate_certs: no
-    status_code: 200
-    user: "elastic"
-    password: "{{ elastic_password }}"
-  register: es_check
-  until: es_check.status == 200
-  retries: 12
-  delay: 10
-  ignore_errors: yes
 
 - name: Start and enable Kibana service
   block:
@@ -189,12 +154,3 @@
     - name: Fail with detailed message
       fail:
         msg: "Kibana failed to start after multiple attempts. See debug output above." 
-
-- name: Show elastic password
-  debug:
-    msg: |
-      ✅ All services deployed!
-      
-      Your elastic user password is: {{ elastic_password }}
-      
-      Please save this password securely. If you need to reset credentials, re-run the playbook. 

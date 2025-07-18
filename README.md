@@ -12,11 +12,11 @@ If your Elasticsearch installation is broken, or you want to start fresh, run th
 ansible-playbook -i inventory/hosts cleanup.yml --ask-become-pass
 ```
 
-**Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
+**Note:** When prompted for BECOME password, enter your **sudo password** (the same password you use when running `sudo` commands).
 
 This will:
-- Stop Elasticsearch if running
-- Remove Elasticsearch packages, data, logs, and configuration
+- Stop Elasticsearch, Kibana, and TheHive if running
+- Remove all related packages, data, logs, and configuration
 - Remove the Elastic GPG key and repository
 - Leave your system ready for a clean redeployment
 
@@ -28,64 +28,32 @@ This will:
 ansible-playbook -i inventory/hosts site.yml --ask-become-pass
 ```
 
-**Note:** When prompted for BECOME password", enter your **sudo password** (the same password you use when running `sudo` commands).
+**Note:** When prompted for BECOME password, enter your **sudo password** (the same password you use when running `sudo` commands).
 
-### Password and Authentication Flow
+This will:
+- Install Java, Elasticsearch, Kibana, and TheHive
+- Create all required directories and configuration files
+- Set correct permissions
+- Generate and configure self-signed TLS certificates
+- Start all services and verify they are running
 
-1. **At the start of the playbook**, you will be prompted to enter a password for the `elastic` user. This password will:
-   - Be used to configure Kibana's connection to Elasticsearch
-   - Be the password you set for the `elastic` user in Elasticsearch
+## Security and Authentication
 
-2. **Kibana configuration**: The playbook automatically configures `/etc/kibana/kibana.yml` to use the `elastic` user and the password you entered.
+**Authentication between Kibana and Elasticsearch is now disabled.**
+- No password is required for accessing Elasticsearch or Kibana.
+- Kibana connects to Elasticsearch without authentication.
+- This setup is intended for local development or testing only.
 
-3. **Manual password reset**: During the playbook run, you will be prompted to manually reset the `elastic` password in Elasticsearch. You must use the **same password** you entered at the beginning when running:
-   ```bash
-   sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
-   ```
-
-4. **Automatic restarts**: The playbook will automatically restart Kibana after configuration changes and after the password reset, so the new settings take effect. No manual restart is needed.
-
-5. **Result**: Kibana will be able to connect to Elasticsearch using the password you provided, and you will see a summary at the end of the playbook.
-
-**Summary:**
-- Enter your desired password once at the beginning
-- Use the same password when resetting the `elastic` user password manually
-- The playbook handles all configuration and restarts automatically
-- No need to manually edit configuration files or restart services
-
-## Password Setup and Credentials
-- The `elastic` user password is set manually during deployment for security
-- The password you enter will be used for Kibana authentication with Elasticsearch
-- The password is displayed at the end of the playbook for your reference
-- To reset credentials, re-run the playbook and follow the manual password reset process again
-
-## Resetting the Elasticsearch Password Manually
-If you need to manually reset the password for the `elastic` user (or any built-in user), you can use the `elasticsearch-reset-password` tool. This can be helpful if you lose access or want to set a new password without redeploying.
-
-**Usage:**
-```bash
-sudo /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
-```
-- `-u` specifies the username (e.g., `-u elastic`).
-- The command will prompt you to enter a new password interactively.
-
-> **Note:** You can use any built-in username with the `-u` option, not just `elastic`.
-> Run this command on the server where Elasticsearch is installed, with root or sudo privileges. You do not need to be in a specific directory, just provide the full path to the tool.
-
-**After changing the password manually, you must also update Kibana's configuration:**
-1. Edit `/etc/kibana/kibana.yml`
-2. Update the `elasticsearch.password` field with your new password
-3. Restart Kibana: `sudo systemctl restart kibana`
+> **WARNING:**
+> This configuration disables all security and authentication for Elasticsearch and Kibana.
+> Anyone who can access your server can access all data and services without restriction.
+> **Do not use this configuration in production!**
 
 ## Troubleshooting
-- **If Elasticsearch fails to start:**
+- **If Elasticsearch, Kibana, or TheHive fails to start:**
   - Run the cleanup playbook, then redeploy.
   - Check system requirements (RAM/CPU)
-  - Review logs in `/var/log/elasticsearch/`
-- **If Kibana cannot connect to Elasticsearch:**
-  - Verify the password in `/etc/kibana/kibana.yml` matches the elastic user password
-  - Restart Kibana: `sudo systemctl restart kibana`
-  - Check Kibana logs: `sudo tail -f /var/log/kibana/kibana.log`
+  - Review logs in `/var/log/elasticsearch/`, `/var/log/kibana/`, or `/var/log/thehive/`
 - **Playbook is idempotent:** You can safely re-run it multiple times.
 - **For persistent issues:** Use the cleanup playbook to reset the environment.
 
