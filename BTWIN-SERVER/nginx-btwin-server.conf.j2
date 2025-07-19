@@ -1,0 +1,44 @@
+server {
+    listen 80;
+    server_name your-domain.com;  # Replace with your actual domain name
+
+    root /srv/btwin-server;
+    index index.html index.htm;
+
+    # Main BTWIN-SERVER interface
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Filebeat configurations
+    location /configs/ {
+        alias /srv/btwin-server/configs/;
+        add_header Content-Type application/octet-stream;
+        add_header Content-Disposition "attachment";
+    }
+
+    # Bootstrap scripts
+    location /bootstrap/ {
+        alias /srv/btwin-server/bootstrap/;
+        add_header Content-Type application/octet-stream;
+        add_header Content-Disposition "attachment";
+    }
+
+    # Scripts
+    location /scripts/ {
+        alias /srv/btwin-server/scripts/;
+        add_header Content-Type application/octet-stream;
+        add_header Content-Disposition "attachment";
+    }
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer-when-downgrade" always;
+    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
+
+    # Logging
+    access_log /var/log/nginx/btwin-server_access.log;
+    error_log /var/log/nginx/btwin-server_error.log;
+} 
