@@ -1,5 +1,5 @@
 ---
-- name: Clean up broken Elasticsearch, Kibana, and TheHive installation
+- name: Clean up broken Elasticsearch, Kibana, TheHive, and BTWIN-SERVER installation
   hosts: edr_backend
   become: true
   tasks:
@@ -89,4 +89,74 @@
         - /var/log/thehive
         - /usr/share/thehive
         - /var/lib/thehive
-      ignore_errors: yes 
+      ignore_errors: yes
+
+    # BTWIN-SERVER cleanup
+    - name: Stop Nginx if running
+      systemd:
+        name: nginx
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove Nginx packages
+      apt:
+        name: 
+          - nginx
+          - nginx-common
+          - nginx-core
+        state: absent
+        purge: yes
+        autoremove: yes
+      ignore_errors: yes
+
+    - name: Remove Nginx directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/nginx
+        - /var/log/nginx
+        - /var/www/html
+      ignore_errors: yes
+
+    - name: Remove BTWIN-SERVER files
+      file:
+        path: /srv/btwin-server
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove BTWIN-SERVER Nginx configuration
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/nginx/sites-available/btwin-server
+        - /etc/nginx/sites-enabled/btwin-server.config
+      ignore_errors: yes
+
+    # Java cleanup (if not needed by other applications)
+    - name: Remove Java packages
+      apt:
+        name: 
+          - openjdk-11-jdk
+          - openjdk-11-jre
+        state: absent
+        purge: yes
+        autoremove: yes
+      ignore_errors: yes
+
+    # Final cleanup
+    - name: Clean up any remaining configuration files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/elasticsearch
+        - /etc/kibana
+        - /etc/thehive
+        - /etc/nginx
+      ignore_errors: yes
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes 
