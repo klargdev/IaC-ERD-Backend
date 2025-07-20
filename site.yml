@@ -39,6 +39,32 @@
         group: www-data
         mode: 0755
 
+    - name: Create endpoints directory for EDR agents
+      file:
+        path: /srv/btwin-server/endpoints
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0755
+
+    - name: Create agents directory for EDR binaries
+      file:
+        path: /srv/btwin-server/agents
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: 0755
+
+    - name: Setup EDR agents
+      script: BTWIN-SERVER/scripts/setup-edr-agents.sh
+      args:
+        executable: /bin/bash
+
+    - name: Make EDR agent generator executable
+      file:
+        path: /srv/btwin-server/scripts/edr-agent-generator.sh
+        mode: 0755
+
     - name: Template Filebeat Linux config
       template:
         src: /srv/btwin-server/configs/filebeat-linux.yml

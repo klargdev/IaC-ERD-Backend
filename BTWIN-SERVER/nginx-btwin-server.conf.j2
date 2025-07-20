@@ -31,6 +31,29 @@ server {
         add_header Content-Disposition "attachment";
     }
 
+    # EDR Agent endpoints (unique per endpoint)
+    location /endpoints/ {
+        alias /srv/btwin-server/endpoints/;
+        add_header Content-Type application/octet-stream;
+        add_header Content-Disposition "attachment";
+    }
+
+    # EDR Agent binaries
+    location /agents/ {
+        alias /srv/btwin-server/agents/;
+        add_header Content-Type application/octet-stream;
+        add_header Content-Disposition "attachment";
+    }
+
+    # Telemetry endpoint
+    location /telemetry/ {
+        proxy_pass http://localhost:9200/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
     # Security headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-XSS-Protection "1; mode=block" always;
