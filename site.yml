@@ -55,6 +55,21 @@
         group: www-data
         mode: 0755
 
+    - name: Ensure proper permissions for BTWIN-SERVER directories
+      file:
+        path: "{{ item }}"
+        owner: www-data
+        group: www-data
+        mode: 0755
+        recurse: yes
+      loop:
+        - /srv/btwin-server
+        - /srv/btwin-server/endpoints
+        - /srv/btwin-server/agents
+        - /srv/btwin-server/scripts
+        - /srv/btwin-server/configs
+        - /srv/btwin-server/bootstrap
+
     - name: Setup EDR agents
       script: BTWIN-SERVER/scripts/setup-edr-agents.sh
       args:
@@ -64,6 +79,8 @@
       file:
         path: /srv/btwin-server/scripts/edr-agent-generator.sh
         mode: 0755
+        owner: www-data
+        group: www-data
 
     - name: Template Filebeat Linux config
       template:
@@ -103,6 +120,14 @@
         path: /etc/nginx/sites-enabled/default
         state: absent
         force: yes
+
+    - name: Final permission fix for EDR agent generation
+      shell: |
+        chown -R www-data:www-data /srv/btwin-server/
+        chmod -R 755 /srv/btwin-server/
+        chmod +x /srv/btwin-server/scripts/*.sh
+      args:
+        executable: /bin/bash
 
   handlers:
     - name: Reload Nginx

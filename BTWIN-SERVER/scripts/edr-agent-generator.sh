@@ -22,10 +22,19 @@ echo -e "${GREEN}Generating onboarding URL for endpoint...${NC}"
 
 # Create endpoint-specific configuration
 ENDPOINT_CONFIG_DIR="/srv/btwin-server/endpoints/${ENDPOINT_ID}"
+
+# Ensure the endpoints directory exists with proper permissions
+sudo mkdir -p /srv/btwin-server/endpoints
+sudo chown www-data:www-data /srv/btwin-server/endpoints
+sudo chmod 755 /srv/btwin-server/endpoints
+
+# Create the specific endpoint directory
 sudo mkdir -p "${ENDPOINT_CONFIG_DIR}"
+sudo chown www-data:www-data "${ENDPOINT_CONFIG_DIR}"
+sudo chmod 755 "${ENDPOINT_CONFIG_DIR}"
 
 # Generate Linux onboarding script
-cat > "${ENDPOINT_CONFIG_DIR}/linux-onboard.sh" << 'EOF'
+sudo tee "${ENDPOINT_CONFIG_DIR}/linux-onboard.sh" > /dev/null << 'EOF'
 #!/bin/bash
 
 # EDR Agent Linux Onboarding Script
@@ -120,7 +129,7 @@ echo -e "${GREEN}Telemetry will be sent to: ${ELASTICSEARCH_URL}${NC}"
 EOF
 
 # Generate Windows onboarding script
-cat > "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" << 'EOF'
+sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << 'EOF'
 # EDR Agent Windows Onboarding Script
 # Generated for endpoint: ENDPOINT_ID_PLACEHOLDER
 
@@ -204,7 +213,7 @@ EOF
 echo -e "${YELLOW}Generating endpoint-specific configurations...${NC}"
 
 # Filebeat Linux config
-cat > "${ENDPOINT_CONFIG_DIR}/filebeat-linux.yml" << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/filebeat-linux.yml" > /dev/null << EOF
 filebeat.inputs:
 - type: log
   enabled: true
@@ -231,7 +240,7 @@ logging.level: info
 EOF
 
 # Filebeat Windows config
-cat > "${ENDPOINT_CONFIG_DIR}/filebeat-windows.yml" << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/filebeat-windows.yml" > /dev/null << EOF
 filebeat.inputs:
 - type: log
   enabled: true
@@ -256,7 +265,7 @@ logging.level: info
 EOF
 
 # OpenEDR config
-cat > "${ENDPOINT_CONFIG_DIR}/openedr-config.yml" << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/openedr-config.yml" > /dev/null << EOF
 endpoint:
   id: ${ENDPOINT_ID}
   name: "endpoint-${ENDPOINT_ID}"
@@ -279,13 +288,13 @@ logging:
 EOF
 
 # Logstash config
-cat > "${ENDPOINT_CONFIG_DIR}/logstash.yml" << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/logstash.yml" > /dev/null << EOF
 http.host: "0.0.0.0"
 xpack.monitoring.elasticsearch.hosts: ["${BTWIN_SERVER_URL}:9200"]
 EOF
 
 # Logstash pipeline
-cat > "${ENDPOINT_CONFIG_DIR}/logstash-pipeline.conf" << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/logstash-pipeline.conf" > /dev/null << EOF
 input {
   beats {
     port => 5044
@@ -317,6 +326,7 @@ EOF
 # Set permissions
 sudo chown -R www-data:www-data "${ENDPOINT_CONFIG_DIR}"
 sudo chmod -R 755 "${ENDPOINT_CONFIG_DIR}"
+sudo chmod +x "${ENDPOINT_CONFIG_DIR}/linux-onboard.sh"
 
 # Generate onboarding URLs
 LINUX_URL="${BTWIN_SERVER_URL}/endpoints/${ENDPOINT_ID}/linux-onboard.sh"
