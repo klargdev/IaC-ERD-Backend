@@ -34,6 +34,20 @@ server {
     # EDR Agent endpoints (unique per endpoint)
     location /endpoints/ {
         alias /srv/btwin-server/endpoints/;
+        
+        # Serve PowerShell scripts with correct content type
+        location ~* \.ps1$ {
+            add_header Content-Type text/plain;
+            add_header Content-Disposition "inline";
+        }
+        
+        # Serve shell scripts with correct content type
+        location ~* \.sh$ {
+            add_header Content-Type text/plain;
+            add_header Content-Disposition "inline";
+        }
+        
+        # Default for other files
         add_header Content-Type application/octet-stream;
         add_header Content-Disposition "attachment";
     }

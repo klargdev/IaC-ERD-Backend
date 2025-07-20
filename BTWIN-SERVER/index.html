@@ -87,6 +87,11 @@
         .btn:hover {
             transform: translateY(-2px);
         }
+        .btn:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
         .result {
             background: #e8f5e8;
             border: 1px solid #4caf50;
@@ -145,6 +150,33 @@
         .service-card a:hover {
             text-decoration: underline;
         }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #721c24;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -168,8 +200,17 @@
                         <input type="url" id="elasticsearchUrl" name="elasticsearchUrl" 
                                value="http://localhost:9200" required>
                     </div>
-                    <button type="submit" class="btn">Generate EDR Agent</button>
+                    <button type="submit" class="btn" id="generateBtn">Generate EDR Agent</button>
                 </form>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Generating EDR Agent...</p>
+                </div>
+                
+                <div class="error" id="error">
+                    <strong>Error:</strong> <span id="errorMessage"></span>
+                </div>
                 
                 <div id="result" class="result">
                     <h3>EDR Agent Generated Successfully!</h3>
@@ -226,33 +267,64 @@
             
             const btwinUrl = document.getElementById('btwinUrl').value;
             const elasticsearchUrl = document.getElementById('elasticsearchUrl').value;
+            const generateBtn = document.getElementById('generateBtn');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            
+            // Show loading, hide results and errors
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            generateBtn.disabled = true;
             
             // Generate unique endpoint ID
             const endpointId = generateUUID();
             const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
             
-            // Update result display
-            document.getElementById('endpointId').textContent = endpointId;
-            document.getElementById('timestamp').textContent = timestamp;
-            
-            // Generate commands
-            const linuxCommand = `curl -sSL ${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh | bash`;
-            const windowsCommand = `powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest -Uri '${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1' -UseBasicParsing).Content"`;
-            
-            document.getElementById('linuxCommand').textContent = linuxCommand;
-            document.getElementById('windowsCommand').textContent = windowsCommand;
-            
-            // Update URLs
-            document.getElementById('linuxUrl').href = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
-            document.getElementById('linuxUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
-            document.getElementById('windowsUrl').href = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
-            document.getElementById('windowsUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
-            
-            // Show result
-            document.getElementById('result').style.display = 'block';
-            
-            // Scroll to result
-            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            // Simulate generation (in real implementation, this would call the script)
+            setTimeout(() => {
+                try {
+                    // Update result display
+                    document.getElementById('endpointId').textContent = endpointId;
+                    document.getElementById('timestamp').textContent = timestamp;
+                    
+                    // Generate commands
+                    const linuxCommand = `curl -sSL ${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh | bash`;
+                    const windowsCommand = `powershell -ExecutionPolicy Bypass -Command "(Invoke-WebRequest -Uri '${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1' -UseBasicParsing).Content | Invoke-Expression"`;
+                    
+                    document.getElementById('linuxCommand').textContent = linuxCommand;
+                    document.getElementById('windowsCommand').textContent = windowsCommand;
+                    
+                    // Update URLs
+                    document.getElementById('linuxUrl').href = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
+                    document.getElementById('linuxUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
+                    document.getElementById('windowsUrl').href = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
+                    document.getElementById('windowsUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
+                    
+                    // Show result
+                    result.style.display = 'block';
+                    
+                    // Show note about manual generation
+                    const note = document.createElement('div');
+                    note.style.background = '#fff3cd';
+                    note.style.border = '1px solid #ffeaa7';
+                    note.style.borderRadius = '5px';
+                    note.style.padding = '15px';
+                    note.style.margin = '10px 0';
+                    note.innerHTML = '<strong>Note:</strong> The endpoint files will be created when you run the command. For immediate file creation, use the command line: <code>sudo /srv/btwin-server/scripts/edr-agent-generator.sh ' + btwinUrl + '</code>';
+                    result.appendChild(note);
+                    
+                } catch (err) {
+                    // Show error
+                    document.getElementById('errorMessage').textContent = err.message;
+                    error.style.display = 'block';
+                } finally {
+                    // Hide loading, enable button
+                    loading.style.display = 'none';
+                    generateBtn.disabled = false;
+                }
+            }, 1000);
         });
         
         function generateUUID() {
