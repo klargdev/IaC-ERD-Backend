@@ -129,14 +129,14 @@ echo -e "\${GREEN}Telemetry will be sent to: \${ELASTICSEARCH_URL}\${NC}"
 EOF
 
 # Generate Windows onboarding script
-sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << EOF
+sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << 'EOF'
 # EDR Agent Windows Onboarding Script
-# Generated for endpoint: ${ENDPOINT_ID}
+# Generated for endpoint: ENDPOINT_ID_PLACEHOLDER
 
 param(
-    [string]\$BTWIN_SERVER_URL = "${BTWIN_SERVER_URL}",
-    [string]\$ENDPOINT_ID = "${ENDPOINT_ID}",
-    [string]\$ELASTICSEARCH_URL = "http://localhost:9200"
+    [string]$BTWIN_SERVER_URL = "BTWIN_URL_PLACEHOLDER",
+    [string]$ENDPOINT_ID = "ENDPOINT_ID_PLACEHOLDER",
+    [string]$ELASTICSEARCH_URL = "ELASTICSEARCH_URL_PLACEHOLDER"
 )
 
 Write-Host "=== EDR Agent Windows Onboarding ===" -ForegroundColor Blue
@@ -157,57 +157,62 @@ Invoke-WebRequest -Uri $filebeatUrl -OutFile $filebeatZip
 Expand-Archive -Path $filebeatZip -DestinationPath "$EDR_DIR\Filebeat" -Force
 
 # Download Filebeat configuration
-$filebeatConfig = "\$EDR_DIR\Filebeat\filebeat.yml"
-Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/filebeat-windows.yml" -OutFile $filebeatConfig
+$filebeatConfig = "$EDR_DIR\Filebeat\filebeat.yml"
+Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/filebeat-windows.yml" -OutFile $filebeatConfig
 
 Write-Host "Installing OpenEDR..." -ForegroundColor Yellow
 
 # Download and install OpenEDR
-$openedrUrl = "\$BTWIN_SERVER_URL/agents/openedr-windows.zip"
-$openedrZip = "\$env:TEMP\openedr.zip"
+$openedrUrl = "$BTWIN_SERVER_URL/agents/openedr-windows.zip"
+$openedrZip = "$env:TEMP\openedr.zip"
 Invoke-WebRequest -Uri $openedrUrl -OutFile $openedrZip
-Expand-Archive -Path $openedrZip -DestinationPath "\$EDR_DIR\OpenEDR" -Force
+Expand-Archive -Path $openedrZip -DestinationPath "$EDR_DIR\OpenEDR" -Force
 
 # Download OpenEDR configuration
-$openedrConfig = "\$EDR_DIR\OpenEDR\config.yml"
-Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/openedr-config.yml" -OutFile $openedrConfig
+$openedrConfig = "$EDR_DIR\OpenEDR\config.yml"
+Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/openedr-config.yml" -OutFile $openedrConfig
 
 Write-Host "Installing Logstash..." -ForegroundColor Yellow
 
 # Download and install Logstash
 $logstashUrl = "https://artifacts.elastic.co/downloads/logstash/logstash-8.11.0-windows-x86_64.zip"
-$logstashZip = "\$env:TEMP\logstash.zip"
+$logstashZip = "$env:TEMP\logstash.zip"
 Invoke-WebRequest -Uri $logstashUrl -OutFile $logstashZip
-Expand-Archive -Path $logstashZip -DestinationPath "\$EDR_DIR\Logstash" -Force
+Expand-Archive -Path $logstashZip -DestinationPath "$EDR_DIR\Logstash" -Force
 
 # Download Logstash configuration
-$logstashConfig = "\$EDR_DIR\Logstash\config\logstash.yml"
-$logstashPipeline = "\$EDR_DIR\Logstash\config\pipelines.yml"
-Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/logstash.yml" -OutFile $logstashConfig
-Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/logstash-pipeline.conf" -OutFile $logstashPipeline
+$logstashConfig = "$EDR_DIR\Logstash\config\logstash.yml"
+$logstashPipeline = "$EDR_DIR\Logstash\config\pipelines.yml"
+Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/logstash.yml" -OutFile $logstashConfig
+Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/logstash-pipeline.conf" -OutFile $logstashPipeline
 
 Write-Host "Starting services..." -ForegroundColor Yellow
 
 # Start Filebeat as Windows service
 $filebeatService = "Filebeat-EDR"
-$filebeatExe = "\$EDR_DIR\Filebeat\filebeat.exe"
+$filebeatExe = "$EDR_DIR\Filebeat\filebeat.exe"
 & $filebeatExe install service $filebeatService
 Start-Service $filebeatService
 
 # Start Logstash as Windows service
 $logstashService = "Logstash-EDR"
-$logstashExe = "\$EDR_DIR\Logstash\bin\logstash.bat"
+$logstashExe = "$EDR_DIR\Logstash\bin\logstash.bat"
 & $logstashExe install service $logstashService
 Start-Service $logstashService
 
 # Start OpenEDR
-$openedrExe = "\$EDR_DIR\OpenEDR\openedr-agent.exe"
+$openedrExe = "$EDR_DIR\OpenEDR\openedr-agent.exe"
 Start-Process -FilePath $openedrExe -ArgumentList "--config", $openedrConfig -WindowStyle Hidden
 
 Write-Host "=== EDR Agent installation complete! ===" -ForegroundColor Green
-Write-Host "Endpoint ID: \$ENDPOINT_ID" -ForegroundColor Green
-Write-Host "Telemetry will be sent to: \$ELASTICSEARCH_URL" -ForegroundColor Green
+Write-Host "Endpoint ID: $ENDPOINT_ID" -ForegroundColor Green
+Write-Host "Telemetry will be sent to: $ELASTICSEARCH_URL" -ForegroundColor Green
 EOF
+
+# Replace placeholders with actual values
+sed -i "s|BTWIN_URL_PLACEHOLDER|${BTWIN_SERVER_URL}|g" "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1"
+sed -i "s|ENDPOINT_ID_PLACEHOLDER|${ENDPOINT_ID}|g" "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1"
+sed -i "s|ELASTICSEARCH_URL_PLACEHOLDER|http://localhost:9200|g" "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1"
 
 # Generate endpoint-specific configurations
 echo -e "${YELLOW}Generating endpoint-specific configurations...${NC}"
