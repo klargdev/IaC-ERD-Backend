@@ -151,6 +151,14 @@
         enabled: yes
         daemon_reload: yes
 
+    - name: Allow www-data to run edr-agent-generator.sh without password
+      lineinfile:
+        path: /etc/sudoers.d/btwin-edr-generator
+        create: yes
+        mode: '0440'
+        line: 'www-data ALL=(ALL) NOPASSWD: /srv/btwin-server/scripts/edr-agent-generator.sh'
+        state: present
+
   handlers:
     - name: Reload Nginx
       service:
