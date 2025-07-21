@@ -1,0 +1,15 @@
+[Unit]
+Description=BTWIN EDR API Server
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/srv/btwin-server
+ExecStart=/usr/bin/python3 /srv/btwin-server/api-server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target 

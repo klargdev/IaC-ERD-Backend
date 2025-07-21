@@ -129,6 +129,28 @@
       args:
         executable: /bin/bash
 
+    - name: Make API server executable
+      file:
+        path: /srv/btwin-server/api-server.py
+        mode: 0755
+        owner: www-data
+        group: www-data
+
+    - name: Install BTWIN API service
+      copy:
+        src: BTWIN-SERVER/btwin-api.service
+        dest: /etc/systemd/system/btwin-api.service
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: Enable and start BTWIN API service
+      systemd:
+        name: btwin-api.service
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
   handlers:
     - name: Reload Nginx
       service:

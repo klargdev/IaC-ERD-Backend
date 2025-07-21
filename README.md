@@ -126,6 +126,9 @@ This will:
 - Start all services and verify they are running
 - Deploy BTWIN-SERVER (betweener) with Nginx for endpoint onboarding
 - Configure Filebeat templates for Linux and Windows endpoints
+- **Install and configure the web API server** for EDR agent generation
+- **Set up the systemd service** for the API server
+- **Configure the web interface** to properly generate endpoints
 
 ## Accessing Services
 - **Elasticsearch:** https://localhost:9200
@@ -157,19 +160,70 @@ curl http://YOUR_SERVER_IP
 ```
 
 ### 3. Test Endpoint Onboarding
-```bash
-# Linux endpoint onboarding
-curl -sSL http://localhost/bootstrap/linux-bootstrap.sh | bash
 
-# Windows endpoint onboarding (from PowerShell)
-powershell -ExecutionPolicy Bypass -Command "Invoke-Expression (Invoke-WebRequest -Uri 'http://localhost/bootstrap/windows-bootstrap.ps1' -UseBasicParsing).Content"
+**Test the Web Interface:**
+1. Open http://localhost in your browser
+2. Fill in the configuration and click "Generate EDR Agent"
+3. Verify that files are created in `/srv/btwin-server/endpoints/[endpoint-id]/`
+
+**Test Command Line Generation:**
+```bash
+# Generate a test endpoint
+sudo /srv/btwin-server/scripts/edr-agent-generator.sh http://localhost
+
+# Check if files were created
+ls -la /srv/btwin-server/endpoints/
+
+# Test the generated scripts
+curl -sSL http://localhost/endpoints/[endpoint-id]/linux-onboard.sh | head -10
 ```
 
 ## Endpoint Onboarding
-The BTWIN-SERVER provides:
-- Filebeat configuration templates for Linux and Windows endpoints
-- Downloadable agent configurations
-- Centralized endpoint management interface
+
+### Web Interface (Recommended)
+The BTWIN-SERVER web interface now provides a complete EDR agent generation system:
+
+1. **Access the web interface:** http://localhost (or your configured domain)
+2. **Fill in the configuration:**
+   - BTWIN Server URL: `http://localhost` (or your domain)
+   - Elasticsearch URL: `http://localhost:9200`
+3. **Click "Generate EDR Agent"**
+4. **The system will:**
+   - ✅ Create actual files in `/srv/btwin-server/endpoints/[endpoint-id]/`
+   - ✅ Generate Linux and Windows onboarding scripts
+   - ✅ Provide working download URLs
+   - ✅ Show success confirmation
+
+### Command Line Generation
+For manual generation or scripting:
+
+```bash
+# Generate a new endpoint
+sudo /srv/btwin-server/scripts/edr-agent-generator.sh http://localhost
+
+# The generated files will be in:
+# /srv/btwin-server/endpoints/[endpoint-id]/
+```
+
+### What's Generated
+Each endpoint gets:
+- **Linux onboarding script** (`linux-onboard.sh`)
+- **Windows onboarding script** (`windows-onboard.ps1`)
+- **Filebeat configurations** for both platforms
+- **OpenEDR configurations** for both platforms
+- **Logstash configurations** for both platforms
+
+### Using the Generated Scripts
+
+**Linux Endpoint:**
+```bash
+curl -sSL http://localhost/endpoints/[endpoint-id]/linux-onboard.sh | bash
+```
+
+**Windows Endpoint (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force -Path 'C:\temp'; Invoke-WebRequest -Uri 'http://localhost/endpoints/[endpoint-id]/windows-onboard.ps1' -OutFile 'C:\temp\onboard.ps1'; & 'C:\temp\onboard.ps1'"
+```
 
 ## Troubleshooting
 
@@ -222,6 +276,17 @@ nslookup your-domain.com
   - Check Nginx logs: `tail -f /var/log/nginx/error.log`
   - Verify file permissions: `sudo chown -R www-data:www-data /srv/btwin-server/`
 
+- **If the web interface doesn't generate endpoints:**
+  - Check API server status: `systemctl status btwin-api.service`
+  - Restart the API service: `sudo systemctl restart btwin-api.service`
+  - Check API server logs: `journalctl -u btwin-api.service -f`
+  - Verify the API is accessible: `curl -X POST http://localhost:8081/ -d "url=http://localhost&elasticsearch=http://localhost:9200"`
+
+- **If endpoint files are not created:**
+  - Check script permissions: `chmod +x /srv/btwin-server/scripts/*.sh`
+  - Verify the endpoints directory exists: `ls -la /srv/btwin-server/endpoints/`
+  - Test manual generation: `sudo /srv/btwin-server/scripts/edr-agent-generator.sh http://localhost`
+
 ### Common Error Solutions
 
 **403 Forbidden:**
@@ -243,6 +308,29 @@ sudo chmod -R 755 /srv/btwin-server/
 ### Playbook Issues
 - **Playbook is idempotent:** You can safely re-run it multiple times.
 - **For persistent issues:** Use the cleanup playbook to reset the environment.
+
+## Recent Improvements (v2.0)
+
+### ✅ Fixed Web Interface
+- **Problem:** Web interface generated commands but didn't create actual files
+- **Solution:** Implemented proper API server that calls the backend scripts
+- **Result:** Web interface now actually creates files in `/srv/btwin-server/endpoints/`
+
+### ✅ Fixed Script Generation
+- **Problem:** Generated scripts had placeholder values like `BTWIN_URL_PLACEHOLDER`
+- **Solution:** Fixed heredoc syntax and variable substitution in generator scripts
+- **Result:** Generated scripts now work properly with actual URLs and endpoint IDs
+
+### ✅ Added API Server
+- **New:** Python API server running on port 8081
+- **New:** Systemd service for automatic management
+- **New:** Proper error handling and JSON responses
+
+### ✅ Enhanced Web Interface
+- **New:** Real-time endpoint generation
+- **New:** Success/error feedback
+- **New:** Working download URLs
+- **New:** Automatic file creation confirmation
 
 ## External Access (Optional)
 

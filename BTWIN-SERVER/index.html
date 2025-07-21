@@ -278,13 +278,23 @@
             error.style.display = 'none';
             generateBtn.disabled = true;
             
-            // Generate unique endpoint ID
-            const endpointId = generateUUID();
-            const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+            // Make actual API call to generate the endpoint
+            const formData = new FormData();
+            formData.append('url', btwinUrl);
+            formData.append('elasticsearch', elasticsearchUrl);
             
-            // Simulate generation (in real implementation, this would call the script)
-            setTimeout(() => {
+            fetch('/api/generate/', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
                 try {
+                    if (data.success) {
+                        const endpointId = data.endpoint_id;
+                    
+                    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                    
                     // Update result display
                     document.getElementById('endpointId').textContent = endpointId;
                     document.getElementById('timestamp').textContent = timestamp;
@@ -305,26 +315,39 @@
                     // Show result
                     result.style.display = 'block';
                     
-                    // Show note about manual generation
-                    const note = document.createElement('div');
-                    note.style.background = '#fff3cd';
-                    note.style.border = '1px solid #ffeaa7';
-                    note.style.borderRadius = '5px';
-                    note.style.padding = '15px';
-                    note.style.margin = '10px 0';
-                    note.innerHTML = '<strong>Note:</strong> The endpoint files will be created when you run the command. For immediate file creation, use the command line: <code>sudo /srv/btwin-server/scripts/edr-agent-generator.sh ' + btwinUrl + '</code>';
-                    result.appendChild(note);
+                    // Show success message
+                    const successNote = document.createElement('div');
+                    successNote.style.background = '#d4edda';
+                    successNote.style.border = '1px solid #c3e6cb';
+                    successNote.style.borderRadius = '5px';
+                    successNote.style.padding = '15px';
+                    successNote.style.margin = '10px 0';
+                    successNote.style.color = '#155724';
+                    successNote.innerHTML = '<strong>✅ Success!</strong> Endpoint files have been created in /srv/btwin-server/endpoints/' + endpointId + '/';
+                    result.appendChild(successNote);
                     
-                } catch (err) {
-                    // Show error
-                    document.getElementById('errorMessage').textContent = err.message;
+                } else {
+                    // Show error from API
+                    document.getElementById('errorMessage').textContent = data.error || 'Failed to generate endpoint';
                     error.style.display = 'block';
-                } finally {
-                    // Hide loading, enable button
-                    loading.style.display = 'none';
-                    generateBtn.disabled = false;
                 }
-            }, 1000);
+            } catch (err) {
+                // Show error
+                document.getElementById('errorMessage').textContent = err.message;
+                error.style.display = 'block';
+            } finally {
+                // Hide loading, enable button
+                loading.style.display = 'none';
+                generateBtn.disabled = false;
+            }
+        })
+        .catch(err => {
+            // Show error
+            document.getElementById('errorMessage').textContent = 'Failed to generate endpoint: ' + err.message;
+            error.style.display = 'block';
+            loading.style.display = 'none';
+            generateBtn.disabled = false;
+        });
         });
         
         function generateUUID() {
