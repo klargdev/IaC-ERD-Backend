@@ -34,11 +34,11 @@ sudo chown www-data:www-data "${ENDPOINT_CONFIG_DIR}"
 sudo chmod 755 "${ENDPOINT_CONFIG_DIR}"
 
 # Generate Linux onboarding script
-sudo tee "${ENDPOINT_CONFIG_DIR}/linux-onboard.sh" > /dev/null << 'EOF'
+sudo tee "${ENDPOINT_CONFIG_DIR}/linux-onboard.sh" > /dev/null << EOF
 #!/bin/bash
 
 # EDR Agent Linux Onboarding Script
-# Generated for endpoint: ENDPOINT_ID_PLACEHOLDER
+# Generated for endpoint: ${ENDPOINT_ID}
 
 set -e
 
@@ -49,12 +49,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}=== EDR Agent Linux Onboarding ===${NC}"
+echo -e "\${BLUE}=== EDR Agent Linux Onboarding ===\${NC}"
 
 # Configuration
-BTWIN_SERVER_URL="BTWIN_URL_PLACEHOLDER"
-ENDPOINT_ID="ENDPOINT_ID_PLACEHOLDER"
-ELASTICSEARCH_URL="ELASTICSEARCH_URL_PLACEHOLDER"
+BTWIN_SERVER_URL="${BTWIN_SERVER_URL}"
+ENDPOINT_ID="${ENDPOINT_ID}"
+ELASTICSEARCH_URL="http://localhost:9200"
 
 # Detect OS
 if [[ -f /etc/os-release ]]; then
@@ -66,10 +66,10 @@ else
     VER=$(uname -r)
 fi
 
-echo -e "${GREEN}Detected OS: ${OS} ${VER}${NC}"
+echo -e "\${GREEN}Detected OS: \${OS} \${VER}\${NC}"
 
 # Install dependencies
-echo -e "${YELLOW}Installing dependencies...${NC}"
+echo -e "\${YELLOW}Installing dependencies...\${NC}"
 
 if command -v apt-get &> /dev/null; then
     sudo apt-get update
@@ -79,64 +79,64 @@ elif command -v yum &> /dev/null; then
 elif command -v dnf &> /dev/null; then
     sudo dnf install -y curl wget unzip
 else
-    echo -e "${RED}Unsupported package manager${NC}"
+    echo -e "\${RED}Unsupported package manager\${NC}"
     exit 1
 fi
 
 # Download and install Filebeat
-echo -e "${YELLOW}Installing Filebeat...${NC}"
+echo -e "\${YELLOW}Installing Filebeat...\${NC}"
 curl -L -O https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-8.11.0-amd64.deb
 sudo dpkg -i filebeat-8.11.0-amd64.deb
 
 # Download Filebeat configuration
-echo -e "${YELLOW}Configuring Filebeat...${NC}"
-curl -o /etc/filebeat/filebeat.yml "${BTWIN_SERVER_URL}/endpoints/${ENDPOINT_ID}/filebeat-linux.yml"
+echo -e "\${YELLOW}Configuring Filebeat...\${NC}"
+curl -o /etc/filebeat/filebeat.yml "\${BTWIN_SERVER_URL}/endpoints/\${ENDPOINT_ID}/filebeat-linux.yml"
 
 # Download and install OpenEDR
-echo -e "${YELLOW}Installing OpenEDR...${NC}"
+echo -e "\${YELLOW}Installing OpenEDR...\${NC}"
 mkdir -p /opt/openedr
-curl -L -o /opt/openedr/openedr-agent.tar.gz "${BTWIN_SERVER_URL}/agents/openedr-linux.tar.gz"
+curl -L -o /opt/openedr/openedr-agent.tar.gz "\${BTWIN_SERVER_URL}/agents/openedr-linux.tar.gz"
 cd /opt/openedr
 tar -xzf openedr-agent.tar.gz
 
 # Configure OpenEDR
-echo -e "${YELLOW}Configuring OpenEDR...${NC}"
-curl -o /opt/openedr/config.yml "${BTWIN_SERVER_URL}/endpoints/${ENDPOINT_ID}/openedr-config.yml"
+echo -e "\${YELLOW}Configuring OpenEDR...\${NC}"
+curl -o /opt/openedr/config.yml "\${BTWIN_SERVER_URL}/endpoints/\${ENDPOINT_ID}/openedr-config.yml"
 
 # Install Logstash
-echo -e "${YELLOW}Installing Logstash...${NC}"
+echo -e "\${YELLOW}Installing Logstash...\${NC}"
 curl -L -O https://artifacts.elastic.co/downloads/logstash/logstash-8.11.0-amd64.deb
 sudo dpkg -i logstash-8.11.0-amd64.deb
 
 # Configure Logstash
-echo -e "${YELLOW}Configuring Logstash...${NC}"
-curl -o /etc/logstash/logstash.yml "${BTWIN_SERVER_URL}/endpoints/${ENDPOINT_ID}/logstash.yml"
-curl -o /etc/logstash/conf.d/pipeline.conf "${BTWIN_SERVER_URL}/endpoints/${ENDPOINT_ID}/logstash-pipeline.conf"
+echo -e "\${YELLOW}Configuring Logstash...\${NC}"
+curl -o /etc/logstash/logstash.yml "\${BTWIN_SERVER_URL}/endpoints/\${ENDPOINT_ID}/logstash.yml"
+curl -o /etc/logstash/conf.d/pipeline.conf "\${BTWIN_SERVER_URL}/endpoints/\${ENDPOINT_ID}/logstash-pipeline.conf"
 
 # Start services
-echo -e "${YELLOW}Starting services...${NC}"
+echo -e "\${YELLOW}Starting services...\${NC}"
 sudo systemctl enable filebeat logstash
 sudo systemctl start filebeat logstash
 
 # Start OpenEDR
-echo -e "${YELLOW}Starting OpenEDR...${NC}"
+echo -e "\${YELLOW}Starting OpenEDR...\${NC}"
 cd /opt/openedr
 sudo ./openedr-agent --config config.yml &
 
-echo -e "${GREEN}=== EDR Agent installation complete! ===${NC}"
-echo -e "${GREEN}Endpoint ID: ${ENDPOINT_ID}${NC}"
-echo -e "${GREEN}Telemetry will be sent to: ${ELASTICSEARCH_URL}${NC}"
+echo -e "\${GREEN}=== EDR Agent installation complete! ===\${NC}"
+echo -e "\${GREEN}Endpoint ID: \${ENDPOINT_ID}\${NC}"
+echo -e "\${GREEN}Telemetry will be sent to: \${ELASTICSEARCH_URL}\${NC}"
 EOF
 
 # Generate Windows onboarding script
-sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << 'EOF'
+sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << EOF
 # EDR Agent Windows Onboarding Script
-# Generated for endpoint: ENDPOINT_ID_PLACEHOLDER
+# Generated for endpoint: ${ENDPOINT_ID}
 
 param(
-    [string]$BTWIN_SERVER_URL = "BTWIN_URL_PLACEHOLDER",
-    [string]$ENDPOINT_ID = "ENDPOINT_ID_PLACEHOLDER",
-    [string]$ELASTICSEARCH_URL = "ELASTICSEARCH_URL_PLACEHOLDER"
+    [string]$BTWIN_SERVER_URL = "${BTWIN_SERVER_URL}",
+    [string]$ENDPOINT_ID = "${ENDPOINT_ID}",
+    [string]$ELASTICSEARCH_URL = "http://localhost:9200"
 )
 
 Write-Host "=== EDR Agent Windows Onboarding ===" -ForegroundColor Blue
@@ -157,56 +157,56 @@ Invoke-WebRequest -Uri $filebeatUrl -OutFile $filebeatZip
 Expand-Archive -Path $filebeatZip -DestinationPath "$EDR_DIR\Filebeat" -Force
 
 # Download Filebeat configuration
-$filebeatConfig = "$EDR_DIR\Filebeat\filebeat.yml"
-Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/filebeat-windows.yml" -OutFile $filebeatConfig
+$filebeatConfig = "\$EDR_DIR\Filebeat\filebeat.yml"
+Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/filebeat-windows.yml" -OutFile $filebeatConfig
 
 Write-Host "Installing OpenEDR..." -ForegroundColor Yellow
 
 # Download and install OpenEDR
-$openedrUrl = "$BTWIN_SERVER_URL/agents/openedr-windows.zip"
-$openedrZip = "$env:TEMP\openedr.zip"
+$openedrUrl = "\$BTWIN_SERVER_URL/agents/openedr-windows.zip"
+$openedrZip = "\$env:TEMP\openedr.zip"
 Invoke-WebRequest -Uri $openedrUrl -OutFile $openedrZip
-Expand-Archive -Path $openedrZip -DestinationPath "$EDR_DIR\OpenEDR" -Force
+Expand-Archive -Path $openedrZip -DestinationPath "\$EDR_DIR\OpenEDR" -Force
 
 # Download OpenEDR configuration
-$openedrConfig = "$EDR_DIR\OpenEDR\config.yml"
-Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/openedr-config.yml" -OutFile $openedrConfig
+$openedrConfig = "\$EDR_DIR\OpenEDR\config.yml"
+Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/openedr-config.yml" -OutFile $openedrConfig
 
 Write-Host "Installing Logstash..." -ForegroundColor Yellow
 
 # Download and install Logstash
 $logstashUrl = "https://artifacts.elastic.co/downloads/logstash/logstash-8.11.0-windows-x86_64.zip"
-$logstashZip = "$env:TEMP\logstash.zip"
+$logstashZip = "\$env:TEMP\logstash.zip"
 Invoke-WebRequest -Uri $logstashUrl -OutFile $logstashZip
-Expand-Archive -Path $logstashZip -DestinationPath "$EDR_DIR\Logstash" -Force
+Expand-Archive -Path $logstashZip -DestinationPath "\$EDR_DIR\Logstash" -Force
 
 # Download Logstash configuration
-$logstashConfig = "$EDR_DIR\Logstash\config\logstash.yml"
-$logstashPipeline = "$EDR_DIR\Logstash\config\pipelines.yml"
-Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/logstash.yml" -OutFile $logstashConfig
-Invoke-WebRequest -Uri "$BTWIN_SERVER_URL/endpoints/$ENDPOINT_ID/logstash-pipeline.conf" -OutFile $logstashPipeline
+$logstashConfig = "\$EDR_DIR\Logstash\config\logstash.yml"
+$logstashPipeline = "\$EDR_DIR\Logstash\config\pipelines.yml"
+Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/logstash.yml" -OutFile $logstashConfig
+Invoke-WebRequest -Uri "\$BTWIN_SERVER_URL/endpoints/\$ENDPOINT_ID/logstash-pipeline.conf" -OutFile $logstashPipeline
 
 Write-Host "Starting services..." -ForegroundColor Yellow
 
 # Start Filebeat as Windows service
 $filebeatService = "Filebeat-EDR"
-$filebeatExe = "$EDR_DIR\Filebeat\filebeat.exe"
+$filebeatExe = "\$EDR_DIR\Filebeat\filebeat.exe"
 & $filebeatExe install service $filebeatService
 Start-Service $filebeatService
 
 # Start Logstash as Windows service
 $logstashService = "Logstash-EDR"
-$logstashExe = "$EDR_DIR\Logstash\bin\logstash.bat"
+$logstashExe = "\$EDR_DIR\Logstash\bin\logstash.bat"
 & $logstashExe install service $logstashService
 Start-Service $logstashService
 
 # Start OpenEDR
-$openedrExe = "$EDR_DIR\OpenEDR\openedr-agent.exe"
+$openedrExe = "\$EDR_DIR\OpenEDR\openedr-agent.exe"
 Start-Process -FilePath $openedrExe -ArgumentList "--config", $openedrConfig -WindowStyle Hidden
 
 Write-Host "=== EDR Agent installation complete! ===" -ForegroundColor Green
-Write-Host "Endpoint ID: $ENDPOINT_ID" -ForegroundColor Green
-Write-Host "Telemetry will be sent to: $ELASTICSEARCH_URL" -ForegroundColor Green
+Write-Host "Endpoint ID: \$ENDPOINT_ID" -ForegroundColor Green
+Write-Host "Telemetry will be sent to: \$ELASTICSEARCH_URL" -ForegroundColor Green
 EOF
 
 # Generate endpoint-specific configurations

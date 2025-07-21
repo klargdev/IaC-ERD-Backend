@@ -291,7 +291,7 @@
                     
                     // Generate commands
                     const linuxCommand = `curl -sSL ${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh | bash`;
-                    const windowsCommand = `powershell -ExecutionPolicy Bypass -Command "(Invoke-WebRequest -Uri '${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1' -UseBasicParsing).Content | Invoke-Expression"`;
+                    const windowsCommand = `powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force -Path 'C:\\temp'; Invoke-WebRequest -Uri '${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1' -OutFile 'C:\\temp\\onboard.ps1'; & 'C:\\temp\\onboard.ps1'"`;
                     
                     document.getElementById('linuxCommand').textContent = linuxCommand;
                     document.getElementById('windowsCommand').textContent = windowsCommand;
