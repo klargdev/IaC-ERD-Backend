@@ -134,9 +134,9 @@ sudo tee "${ENDPOINT_CONFIG_DIR}/windows-onboard.ps1" > /dev/null << EOF
 # Generated for endpoint: ${ENDPOINT_ID}
 
 param(
-    [string]$BTWIN_SERVER_URL = "${BTWIN_SERVER_URL}",
-    [string]$ENDPOINT_ID = "${ENDPOINT_ID}",
-    [string]$ELASTICSEARCH_URL = "http://localhost:9200"
+    [string]\$BTWIN_SERVER_URL = "${BTWIN_SERVER_URL}",
+    [string]\$ENDPOINT_ID = "${ENDPOINT_ID}",
+    [string]\$ELASTICSEARCH_URL = "http://localhost:9200"
 )
 
 Write-Host "=== EDR Agent Windows Onboarding ===" -ForegroundColor Blue
