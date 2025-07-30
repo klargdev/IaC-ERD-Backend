@@ -187,16 +187,6 @@
         owner: www-data
         group: www-data
 
-    - name: Template Filebeat Linux config
-      template:
-        src: /srv/btwin-server/configs/filebeat-linux.yml
-        dest: /srv/btwin-server/configs/filebeat-linux.yml
-        owner: www-data
-        group: www-data
-        mode: 0644
-      vars:
-        elastic_stack_url: "{{ stack_address }}"
-
     - name: Template Filebeat Windows config
       template:
         src: /srv/btwin-server/configs/filebeat-windows.yml

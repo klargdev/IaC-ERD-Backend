@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # EDR Agents Setup Script
-# Creates agent binaries and directories for the EDR system
+# Creates agent binaries and directories for the EDR system (Windows Only)
 
 set -e
 
@@ -12,26 +12,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}=== EDR Agents Setup ===${NC}"
+echo -e "${BLUE}=== EDR Agents Setup (Windows Only) ===${NC}"
 
 # Create agents directory
 AGENTS_DIR="/srv/btwin-server/agents"
 sudo mkdir -p "${AGENTS_DIR}"
 
 echo -e "${YELLOW}Creating agent binaries...${NC}"
-
-# Create placeholder OpenEDR Linux agent
-cat > "${AGENTS_DIR}/openedr-linux.tar.gz" << 'EOF'
-# This is a placeholder for the OpenEDR Linux agent
-# In a real deployment, this would be the actual OpenEDR binary
-# For now, we'll create a simple script that simulates the agent
-
-#!/bin/bash
-echo "OpenEDR Linux Agent - Placeholder"
-echo "In production, this would be the actual OpenEDR binary"
-echo "Endpoint ID: $1"
-echo "Config: $2"
-EOF
 
 # Create placeholder OpenEDR Windows agent
 cat > "${AGENTS_DIR}/openedr-windows.zip" << 'EOF'
@@ -59,10 +46,6 @@ AGENTS_DIR="/srv/btwin-server/agents"
 cd "${AGENTS_DIR}"
 
 echo "Downloading EDR agent binaries..."
-
-# Download OpenEDR Linux (placeholder - replace with actual URL)
-echo "Downloading OpenEDR Linux agent..."
-# curl -L -o openedr-linux.tar.gz "https://github.com/openedr/openedr/releases/latest/download/openedr-linux.tar.gz"
 
 # Download OpenEDR Windows (placeholder - replace with actual URL)
 echo "Downloading OpenEDR Windows agent..."

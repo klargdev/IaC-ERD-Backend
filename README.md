@@ -41,14 +41,14 @@ A custom middleware server (`BTWIN-SERVER`) serves as the central hub for endpoi
 ### **Remote Installation Pipeline**
 The system implements a sophisticated remote deployment pipeline through the following components:
 
-1. **Agent Generator Script** (`edr-agent-generator.sh`): Creates unique endpoint IDs and generates platform-specific onboarding scripts (Linux/Windows)
+1. **Agent Generator Script** (`edr-agent-generator.sh`): Creates unique endpoint IDs and generates Windows-specific onboarding scripts (OpenEDR is Windows-only)
 
 2. **Configuration Templates**: Dynamically generates endpoint-specific configurations for:
    - Filebeat (log collection and forwarding)
    - OpenEDR (endpoint monitoring agent)
    - Logstash (data processing pipeline)
 
-3. **Onboarding Scripts**: Platform-specific installation scripts that:
+3. **Onboarding Scripts**: Windows-specific installation scripts that:
    - Download official agent binaries from Elastic and OpenEDR repositories
    - Install and configure Filebeat, Logstash, and OpenEDR agents
    - Establish secure communication channels to the Elasticsearch backend
@@ -73,7 +73,7 @@ The implemented data flow follows this pattern:
 - **Unique Endpoint Identification**: Each endpoint receives a unique UUID for tracking and management
 - **Modular Architecture**: Components can be deployed independently or as a complete stack
 - **Idempotent Deployment**: Ansible playbooks can be safely re-run without affecting existing configurations
-- **Multi-platform Support**: Native support for both Linux and Windows endpoint onboarding
+- **Windows-only Support**: Native support for Windows endpoint onboarding (OpenEDR is Windows-only)
 
 This architecture provides a complete, production-ready EDR backend infrastructure that enables organizations to deploy, monitor, and respond to security threats across distributed endpoint environments through a centralized, automated management system with secure remote access capabilities.
 
