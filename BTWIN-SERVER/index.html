@@ -219,20 +219,22 @@
                         <strong>Generated at:</strong> <span id="timestamp"></span>
                     </div>
                     
-                    <h4>Linux Onboarding Command:</h4>
-                    <div class="code-block" id="linuxCommand"></div>
-                    
                     <h4>Windows Onboarding Command (PowerShell):</h4>
                     <div class="code-block" id="windowsCommand"></div>
                     
                     <h4>Direct Download URLs:</h4>
                     <div class="endpoint-info">
-                        <strong>Linux Script:</strong> <a id="linuxUrl" href="#" target="_blank"></a><br>
                         <strong>Windows Script:</strong> <a id="windowsUrl" href="#" target="_blank"></a>
                     </div>
                 </div>
             </div>
             
+            <div class="section" id="officialDownloadsSection" style="display:none;">
+                <h2>Official Agent Downloads</h2>
+                <ul id="officialLinksList"></ul>
+                <div id="downloadStatus"></div>
+            </div>
+
             <div class="section">
                 <h2>Available Services</h2>
                 <div class="services">
@@ -271,12 +273,18 @@
             const loading = document.getElementById('loading');
             const result = document.getElementById('result');
             const error = document.getElementById('error');
+            const officialDownloadsSection = document.getElementById('officialDownloadsSection');
+            const officialLinksList = document.getElementById('officialLinksList');
+            const downloadStatus = document.getElementById('downloadStatus');
             
             // Show loading, hide results and errors
             loading.style.display = 'block';
             result.style.display = 'none';
             error.style.display = 'none';
             generateBtn.disabled = true;
+            officialDownloadsSection.style.display = 'none'; // Hide official downloads
+            officialLinksList.innerHTML = ''; // Clear previous links
+            downloadStatus.innerHTML = ''; // Clear previous status
             
             // Make actual API call to generate the endpoint
             const formData = new FormData();
@@ -300,15 +308,11 @@
                     document.getElementById('timestamp').textContent = timestamp;
                     
                     // Generate commands
-                    const linuxCommand = `curl -sSL ${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh | bash`;
                     const windowsCommand = `powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force -Path 'C:\\temp'; Invoke-WebRequest -Uri '${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1' -OutFile 'C:\\temp\\onboard.ps1'; & 'C:\\temp\\onboard.ps1'"`;
                     
-                    document.getElementById('linuxCommand').textContent = linuxCommand;
                     document.getElementById('windowsCommand').textContent = windowsCommand;
                     
                     // Update URLs
-                    document.getElementById('linuxUrl').href = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
-                    document.getElementById('linuxUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/linux-onboard.sh`;
                     document.getElementById('windowsUrl').href = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
                     document.getElementById('windowsUrl').textContent = `${btwinUrl}/endpoints/${endpointId}/windows-onboard.ps1`;
                     
@@ -325,6 +329,19 @@
                     successNote.style.color = '#155724';
                     successNote.innerHTML = '<strong>✅ Success!</strong> Endpoint files have been created in /srv/btwin-server/endpoints/' + endpointId + '/';
                     result.appendChild(successNote);
+
+                    if (data.downloads && data.official_links) {
+                        officialDownloadsSection.style.display = 'block';
+                        officialLinksList.innerHTML = '';
+                        data.official_links.forEach(link => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `<a href="${link.url}" target="_blank">${link.name}</a>`;
+                            officialLinksList.appendChild(li);
+                        });
+                        downloadStatus.innerHTML = data.downloads.map(s => `<div>${s}</div>`).join('');
+                    } else {
+                        officialDownloadsSection.style.display = 'none';
+                    }
                     
                 } else {
                     // Show error from API

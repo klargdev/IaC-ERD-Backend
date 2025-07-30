@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "BTWIN-SERVER",
+			"path": "../../../BTWIN-SERVER"
+		},
+		{
+			"name": "IaC-ERD-Backend",
+			"path": "../.."
+		}
+	],
+	"settings": {}
+}

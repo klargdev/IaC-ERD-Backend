@@ -1,4 +1,66 @@
 ---
+- name: Setup SSH Server for Remote Access
+  hosts: edr_backend
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install OpenSSH Server
+      apt:
+        name: openssh-server
+        state: present
+        update_cache: yes
+
+    - name: Ensure SSH service is enabled and started
+      systemd:
+        name: ssh
+        state: started
+        enabled: yes
+
+    - name: Create SSH configuration directory
+      file:
+        path: /etc/ssh
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Configure SSH for secure remote access
+      template:
+        src: sshd_config.j2
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        backup: yes
+      notify: restart ssh
+
+    - name: Ensure SSH keys directory exists
+      file:
+        path: /root/.ssh
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+
+    - name: Generate SSH host keys if they don't exist
+      command: ssh-keygen -A
+      args:
+        creates: /etc/ssh/ssh_host_rsa_key
+
+    - name: Display SSH connection information
+      debug:
+        msg: |
+          SSH Server configured successfully!
+          
+          To connect to this server:
+          ssh root@{{ ansible_default_ipv4.address }}
+          
+          Or if using a different user:
+          ssh {{ ansible_user }}@{{ ansible_default_ipv4.address }}
+          
+          Server IP: {{ ansible_default_ipv4.address }}
+          SSH Port: 22
+
 - name: Deploy EDR Backend Stack
   hosts: edr_backend
   become: true
@@ -7,6 +69,49 @@
     - elasticsearch
     - kibana
     - thehive
+
+- name: Setup SSH Server for BTWIN-SERVER
+  hosts: btwin_server
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install OpenSSH Server
+      apt:
+        name: openssh-server
+        state: present
+        update_cache: yes
+
+    - name: Ensure SSH service is enabled and started
+      systemd:
+        name: ssh
+        state: started
+        enabled: yes
+
+    - name: Configure SSH for BTWIN-SERVER
+      template:
+        src: sshd_config.j2
+        dest: /etc/ssh/sshd_config
+        owner: root
+        group: root
+        mode: '0600'
+        backup: yes
+      notify: restart ssh
+
+    - name: Generate SSH host keys if they don't exist
+      command: ssh-keygen -A
+      args:
+        creates: /etc/ssh/ssh_host_rsa_key
+
+    - name: Display BTWIN-SERVER SSH connection information
+      debug:
+        msg: |
+          BTWIN-SERVER SSH configured successfully!
+          
+          To connect to BTWIN-SERVER:
+          ssh root@{{ ansible_default_ipv4.address }}
+          
+          Server IP: {{ ansible_default_ipv4.address }}
+          SSH Port: 22
 
 - name: Deploy and configure BTWIN-SERVER (betweener)
   hosts: btwin_server
@@ -160,6 +265,11 @@
         state: present
 
   handlers:
+    - name: restart ssh
+      service:
+        name: ssh
+        state: restarted
+
     - name: Reload Nginx
       service:
         name: nginx

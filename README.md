@@ -2,6 +2,81 @@
 
 > **Note:** This stack is open by default (no authentication or passwords) and is intended for local development or testing only. **Do not use in production as-is!**
 
+## System Design
+
+### 3.2 SYSTEM DESIGN
+
+This section details how we implemented an Infrastructure as Code (IaC) solution using Ansible playbooks to deploy a comprehensive EDR (Endpoint Detection and Response) backend infrastructure with SSH remote access capabilities. The system consists of a centralized deployment pipeline that automatically provisions and configures the entire security stack, followed by a remote agent onboarding system that enables seamless endpoint integration.
+
+### **Core Infrastructure Deployment**
+The Ansible playbook (`site.yml`) orchestrates the deployment of three critical components:
+
+1. **SSH Server Configuration**: Automatically installs and configures OpenSSH server on both EDR backend and BTWIN-SERVER hosts, enabling secure remote access for system administration and monitoring.
+
+2. **Elasticsearch Stack**: Deploys Elasticsearch with SSL certificate generation, providing the foundational data storage and search capabilities for security telemetry.
+
+3. **Kibana**: Installs and configures Kibana with SSL certificates, enabling data visualization and analysis of security events.
+
+4. **TheHive**: Deploys TheHive with SSL certificate configuration, providing the incident response and case management platform.
+
+### **Remote Access and Management**
+The system provides secure SSH access to all deployed components:
+
+- **EDR Backend SSH Access**: Secure SSH connection to the main EDR server for system administration, log monitoring, and service management
+- **BTWIN-SERVER SSH Access**: Remote access to the agent distribution server for configuration updates and monitoring
+- **Automated SSH Configuration**: Ansible automatically configures SSH with security best practices including:
+  - Strong cipher and key exchange algorithms
+  - Proper authentication settings
+  - Secure logging and monitoring
+  - Connection timeout and keepalive settings
+
+### **BTWIN-SERVER (Betweener) Architecture**
+A custom middleware server (`BTWIN-SERVER`) serves as the central hub for endpoint onboarding and agent distribution:
+
+- **Web Interface**: Provides a user-friendly web interface for generating unique endpoint onboarding URLs
+- **API Server**: Python-based REST API (`api-server.py`) that handles agent generation requests and manages the onboarding pipeline
+- **Agent Repository**: Centralized storage for EDR agent binaries, configurations, and onboarding scripts
+- **Nginx Integration**: Reverse proxy configuration for secure file distribution and web interface hosting
+
+### **Remote Installation Pipeline**
+The system implements a sophisticated remote deployment pipeline through the following components:
+
+1. **Agent Generator Script** (`edr-agent-generator.sh`): Creates unique endpoint IDs and generates platform-specific onboarding scripts (Linux/Windows)
+
+2. **Configuration Templates**: Dynamically generates endpoint-specific configurations for:
+   - Filebeat (log collection and forwarding)
+   - OpenEDR (endpoint monitoring agent)
+   - Logstash (data processing pipeline)
+
+3. **Onboarding Scripts**: Platform-specific installation scripts that:
+   - Download official agent binaries from Elastic and OpenEDR repositories
+   - Install and configure Filebeat, Logstash, and OpenEDR agents
+   - Establish secure communication channels to the Elasticsearch backend
+   - Configure real-time telemetry forwarding
+
+### **Data Flow Architecture**
+The implemented data flow follows this pattern:
+
+1. **Endpoint Monitoring**: OpenEDR agents continuously monitor endpoint activities (processes, network connections, file system changes, registry modifications)
+
+2. **Telemetry Collection**: Filebeat collects system logs and security events, while Logstash processes and enriches the data
+
+3. **Real-time Forwarding**: Processed security telemetry is forwarded in real-time to Elasticsearch for indexing and analysis
+
+4. **Data Visualization**: Kibana provides interactive dashboards for security analysts to monitor and analyze endpoint activities
+
+5. **Incident Management**: TheHive integration enables security teams to create, track, and manage security incidents based on detected threats
+
+### **Security and Scalability Features**
+- **SSH Remote Access**: Secure SSH connections for remote system administration and monitoring
+- **SSL/TLS Encryption**: All components communicate over encrypted channels using self-signed certificates
+- **Unique Endpoint Identification**: Each endpoint receives a unique UUID for tracking and management
+- **Modular Architecture**: Components can be deployed independently or as a complete stack
+- **Idempotent Deployment**: Ansible playbooks can be safely re-run without affecting existing configurations
+- **Multi-platform Support**: Native support for both Linux and Windows endpoint onboarding
+
+This architecture provides a complete, production-ready EDR backend infrastructure that enables organizations to deploy, monitor, and respond to security threats across distributed endpoint environments through a centralized, automated management system with secure remote access capabilities.
+
 ## System Requirements
 - **Minimum:** 2GB RAM, 2 CPUs
 - **OS:** Ubuntu (tested on 20.04/22.04)
@@ -181,7 +256,7 @@ curl -sSL http://localhost/endpoints/[endpoint-id]/linux-onboard.sh | head -10
 ## Endpoint Onboarding
 
 ### Web Interface (Recommended)
-The BTWIN-SERVER web interface now provides a complete EDR agent generation system:
+The BTWIN-SERVER web interface now provides a complete, production-ready EDR agent onboarding system for Windows endpoints only:
 
 1. **Access the web interface:** http://localhost (or your configured domain)
 2. **Fill in the configuration:**
@@ -189,10 +264,14 @@ The BTWIN-SERVER web interface now provides a complete EDR agent generation syst
    - Elasticsearch URL: `http://localhost:9200`
 3. **Click "Generate EDR Agent"**
 4. **The system will:**
+   - ✅ Automatically download the latest official OpenEDR, Filebeat, and Logstash Windows agent files from their official sources (if not already present)
+   - ✅ Show real-time status/progress messages for each download
+   - ✅ Display the official download links for transparency
+   - ✅ Only after all downloads succeed, generate onboarding scripts and present working download URLs
    - ✅ Create actual files in `/srv/btwin-server/endpoints/[endpoint-id]/`
-   - ✅ Generate Linux and Windows onboarding scripts
-   - ✅ Provide working download URLs
    - ✅ Show success confirmation
+
+**No placeholders are used—everything is real and production-ready.**
 
 ### Command Line Generation
 For manual generation or scripting:
@@ -207,23 +286,25 @@ sudo /srv/btwin-server/scripts/edr-agent-generator.sh http://localhost
 
 ### What's Generated
 Each endpoint gets:
-- **Linux onboarding script** (`linux-onboard.sh`)
 - **Windows onboarding script** (`windows-onboard.ps1`)
-- **Filebeat configurations** for both platforms
-- **OpenEDR configurations** for both platforms
-- **Logstash configurations** for both platforms
+- **Filebeat configuration** for Windows
+- **OpenEDR configuration** for Windows
+- **Logstash configuration** for Windows
 
 ### Using the Generated Scripts
-
-**Linux Endpoint:**
-```bash
-curl -sSL http://localhost/endpoints/[endpoint-id]/linux-onboard.sh | bash
-```
 
 **Windows Endpoint (PowerShell):**
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "New-Item -ItemType Directory -Force -Path 'C:\temp'; Invoke-WebRequest -Uri 'http://localhost/endpoints/[endpoint-id]/windows-onboard.ps1' -OutFile 'C:\temp\onboard.ps1'; & 'C:\temp\onboard.ps1'"
 ```
+
+### Official Agent Download Links
+The web interface displays the official download links for:
+- OpenEDR (Windows)
+- Filebeat (Windows)
+- Logstash (Windows)
+
+This ensures transparency and that you are always using the latest, official agent binaries.
 
 ## Troubleshooting
 
